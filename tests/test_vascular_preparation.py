@@ -194,6 +194,46 @@ class PreparationTests(unittest.TestCase):
         self.assertFalse((self.base / "new_split.csv").exists())
         self.assertFalse((self.root / "patient_split.csv").exists())
 
+    def test_inventory_without_metadata_or_split_csv(self):
+        for path in (self.base / "new_split.csv", self.root / "generation_config.json",
+                     self.root / "generation_summary.json"):
+            path.unlink()
+        config = self.base / "config.json"
+        config.write_text(json.dumps(self.config))
+        result = subprocess.run([sys.executable, str(REPO / "scripts/prepare_vascular_pilot.py"),
+            "--config", str(config), "--inspect-dataset"], capture_output=True, text=True, check=True)
+        inventory = json.loads(result.stdout)
+        self.assertTrue(inventory["patch_index_exists"])
+        self.assertEqual(inventory["indexed_patient_counts"], {"train": 1, "val": 1, "test": 1})
+        self.assertEqual(inventory["indexed_patch_counts"], {"train": 4, "val": 4, "test": 4})
+        self.assertEqual(inventory["missing_required_index_columns"], [])
+        self.assertNotIn("generation_config.json", inventory["top_level_entries"])
+        self.assertTrue(inventory["split_folders"]["test"]["vtp"])
+        self.assertFalse(inventory["generation_metadata"]["generation_config.json"]["dataset_root"])
+        self.assertEqual(inventory["split_files"]["train"]["raw"]["matching_suffix_count"], 4)
+        self.assertEqual(len(inventory["split_files"]["val"]["vtp"]["examples"]), 3)
+        self.assertEqual(self.read_paths, [])
+
+    def test_inventory_reports_missing_folders_and_index(self):
+        (self.root / "patch_index.csv").unlink()
+        (self.root / "generation_config.json").unlink()
+        empty = self.root / "train" / "raw"
+        for path in empty.iterdir():
+            path.unlink()
+        empty.rmdir()
+        inventory = prep.inspect_dataset(self.config)
+        self.assertFalse(inventory["patch_index_exists"])
+        self.assertNotIn("indexed_patient_counts", inventory)
+        self.assertEqual(inventory["split_files"]["train"]["raw"], {"exists": False})
+
+    def test_inventory_reports_conflicting_assignments_without_aborting(self):
+        rows = copy.deepcopy(self.rows)
+        rows[-1]["patient_id"] = rows[0]["patient_id"]
+        self.write_index(rows)
+        inventory = prep.inspect_dataset(self.config)
+        self.assertIn("multiple patch-index splits", inventory["patch_index_assignment_error"])
+        self.assertEqual(inventory["indexed_patch_counts"]["test"], 4)
+
     def test_rejects_split_mismatch_and_incomplete_generation(self):
         rows = copy.deepcopy(self.rows)
         rows[0]["split"] = "test"

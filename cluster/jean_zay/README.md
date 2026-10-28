@@ -59,6 +59,23 @@ The old `splits.csv` with 55/14/67 patients is a different benchmark.
 These paths/protocol were recovered from code and documentation, not inspected
 on Lustre from the local Mac. The preparation job verifies them on Jean Zay.
 
+Before attempting preparation on a dataset copy with missing metadata, inspect
+the actual files from the login node:
+
+```bash
+python scripts/prepare_vascular_pilot.py --inspect-dataset \
+  --config "$GRALE_DATA_CONFIG" --dataset-root "$GRALE_DATASET_ROOT"
+```
+
+This read-only inventory works without either generation JSON or a split CSV.
+It lists nearby metadata, patch-index columns and example records, indexed
+patient/patch counts, and file counts and example names under each split's
+`raw`, `seg` and `vtp` folders. It reports conflicting index patient assignments
+without stopping the inventory. It does not read image, segmentation or graph
+contents, generate data, or submit a job. Use this output to decide whether to
+correct paths, recover metadata or implement additional loading/extraction code;
+missing generation metadata still blocks the strict preparation preflight.
+
 The standalone CSV may not have been copied with the patch directory. If it is
 absent, the script first looks for a nearby split CSV matching the generation
 fingerprint, then recovers the **existing** assignments from `patch_index.csv`.

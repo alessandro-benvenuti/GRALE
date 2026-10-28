@@ -177,6 +177,58 @@ def input_summary(inputs):
             "available_patch_counts": {split: len(rows) for split, rows in inputs["index"].items()}}
 
 
+def inspect_dataset(config, *, dataset_root=None):
+    """Inventory the actual copy without requiring generator companion files."""
+    root = Path(dataset_root or config["dataset_root"]).expanduser().resolve()
+    if not root.is_dir():
+        raise FileNotFoundError(f"Dataset directory does not exist: {root}")
+    index = (root / config["patch_index_file"]).resolve()
+    result = {
+        "dataset_root": str(root),
+        "top_level_entries": sorted(path.name + ("/" if path.is_dir() else "") for path in root.iterdir()),
+        "parent_metadata_files": sorted(str(path) for path in root.parent.iterdir()
+                                        if path.is_file() and path.suffix.lower() in {".csv", ".json"}),
+        "split_folders": {split: {folder: (root / split / folder).is_dir()
+                                  for folder in ("raw", "seg", "vtp")} for split in SPLITS},
+        "patch_index_file": str(index), "patch_index_exists": index.is_file(),
+    }
+    result["generation_metadata"] = {
+        name: {"dataset_root": (root / name).is_file(), "parent": (root.parent / name).is_file()}
+        for name in ("generation_config.json", "generation_summary.json")}
+    result["split_files"] = {}
+    for split in SPLITS:
+        result["split_files"][split] = {}
+        for folder, suffix in (("raw", "_data.nii.gz"), ("seg", "_seg.nii.gz"), ("vtp", "_graph.vtp")):
+            directory = root / split / folder
+            if not directory.is_dir():
+                result["split_files"][split][folder] = {"exists": False}
+                continue
+            names = sorted(path.name for path in directory.iterdir() if path.is_file())
+            result["split_files"][split][folder] = {
+                "exists": True, "file_count": len(names), "expected_suffix": suffix,
+                "matching_suffix_count": sum(name.endswith(suffix) for name in names),
+                "examples": names[:3]}
+    if index.is_file():
+        with index.open(newline="") as handle:
+            reader = csv.DictReader(handle)
+            result["patch_index_columns"] = reader.fieldnames
+            required = set(MANIFEST_FIELDS[:6])
+            result["missing_required_index_columns"] = sorted(required - set(reader.fieldnames or []))
+            patch_counts = Counter()
+            examples = []
+            for row in reader:
+                patch_counts[row.get("split") or "<missing>"] += 1
+                if len(examples) < 3:
+                    examples.append({key: row.get(key) for key in MANIFEST_FIELDS[:6]})
+            result["indexed_patch_counts"] = dict(patch_counts)
+            result["patch_index_examples"] = examples
+        try:
+            result["indexed_patient_counts"] = dict(Counter(patients_from_index(index).values()))
+        except (ValueError, KeyError) as error:
+            result["patch_index_assignment_error"] = str(error)
+    return result
+
+
 def select_records(rows, count, *, seed, split):
     """Same SHA256 membership/order as GNBM select_capped_records."""
     if count < 1 or len(rows) < count:
@@ -434,18 +486,22 @@ def main(argv=None):
     parser.add_argument("--dataset-root", type=Path)
     parser.add_argument("--patient-split-file", type=Path, help="Override the location of the saved patient CSV")
     parser.add_argument("--check-inputs", action="store_true", help="Validate metadata and split recovery without writing output or reading graphs")
+    parser.add_argument("--inspect-dataset", action="store_true", help="List available files, split directories and patch-index patient counts without requiring generator metadata")
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--smoke-count", type=int)
     parser.add_argument("--include-test-graphs", action="store_true",
                         help="Read/export test GT only for an explicitly frozen evaluation protocol")
     args = parser.parse_args(argv)
     config = json.loads(args.config.read_text())
+    if args.inspect_dataset:
+        print(json.dumps(inspect_dataset(config, dataset_root=args.dataset_root), indent=2))
+        return 0
     if args.check_inputs:
         print(json.dumps(input_summary(validate_inputs(config, dataset_root=args.dataset_root,
                          patient_split_file=args.patient_split_file)), indent=2))
         return 0
     if args.output_dir is None:
-        parser.error("--output-dir is required unless --check-inputs is used")
+        parser.error("--output-dir is required unless --check-inputs or --inspect-dataset is used")
     report = prepare(config, args.output_dir,
         dataset_root=args.dataset_root, patient_split_file=args.patient_split_file, smoke_count=args.smoke_count,
         include_test=args.include_test_graphs)
