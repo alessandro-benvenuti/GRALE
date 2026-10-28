@@ -1,6 +1,6 @@
 # Vascular reconstruction pilot on Jean Zay
 
-Branch: `codex/vascular-reconstruction-pilot`.
+Branch: `experiment/vascular-reconstruction-pilot`.
 
 This first step prepares the environment and graph dataset. It does not launch
 autoencoder training. The continuous-coordinate model, loss integration and
@@ -80,7 +80,7 @@ For a first checkout on Jean Zay:
 
 ```bash
 mkdir -p "$WORK/projects"
-git clone --branch codex/vascular-reconstruction-pilot \
+git clone --branch experiment/vascular-reconstruction-pilot \
   https://github.com/alessandro-benvenuti/GRALE.git "$WORK/projects/GRALE"
 ```
 
@@ -89,7 +89,7 @@ From an existing GRALE checkout, fetch the branch, then set up and prepare:
 ```bash
 cd "$WORK/projects/GRALE"
 git fetch origin
-git switch codex/vascular-reconstruction-pilot
+git switch experiment/vascular-reconstruction-pilot
 
 # One-time installation; no GPU requested. Internet/package access is needed here.
 bash cluster/jean_zay/setup_environment.sh a100
