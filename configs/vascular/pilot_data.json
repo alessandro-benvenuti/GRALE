@@ -11,5 +11,6 @@
   "coordinate_space": "normalized",
   "patch_size": [64, 64, 64],
   "coordinate_tolerance": 0.00001,
+  "duplicate_edge_policy": "coalesce",
   "laplacian_features": false
 }

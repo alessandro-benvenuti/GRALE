@@ -114,6 +114,8 @@ def validate_inputs(config, *, dataset_root=None, patient_split_file=None):
         raise ValueError("Unsupported configuration schema or coordinate order")
     if config["coordinate_space"] != "normalized" or config["laplacian_features"]:
         raise ValueError("This pilot requires normalized coordinates and no Laplacian features")
+    if config.get("duplicate_edge_policy", "error") not in {"error", "coalesce"}:
+        raise ValueError("duplicate_edge_policy must be error or coalesce")
     patch_size = np.asarray(config["patch_size"], dtype=np.int64)
     if patch_size.shape != (3,) or np.any(patch_size <= 0):
         raise ValueError("patch_size must contain three positive integers")
@@ -308,7 +310,10 @@ def read_vtp(path):
     return positions, connectivity.reshape(-1, 2).copy()
 
 
-def inspect_graph(positions, edges, patch_size, tolerance):
+def inspect_graph(positions, edges, patch_size, tolerance, *, duplicate_edge_policy="error"):
+    """Audit a simple undirected target and retain source multigraph counts."""
+    if duplicate_edge_policy not in {"error", "coalesce"}:
+        raise ValueError("duplicate_edge_policy must be error or coalesce")
     positions = np.asarray(positions, dtype=np.float32)
     edges = np.asarray(edges, dtype=np.int64).reshape(-1, 2)
     n = len(positions)
@@ -322,10 +327,14 @@ def inspect_graph(positions, edges, patch_size, tolerance):
     edges = np.sort(edges, axis=1)
     if np.any(edges[:, 0] == edges[:, 1]):
         raise ValueError("Self-loop found in source graph")
-    if len(np.unique(edges, axis=0)) != len(edges):
+    source_edges = len(edges)
+    unique_edges = np.unique(edges, axis=0)
+    duplicates_removed = source_edges - len(unique_edges)
+    if duplicates_removed and duplicate_edge_policy == "error":
         raise ValueError("Duplicate undirected edge found in source graph")
-    if len(edges):
-        edges = edges[np.lexsort((edges[:, 1], edges[:, 0]))]
+    # np.unique also gives a deterministic lexicographic order. Only endpoint
+    # IDs are compared: equal coordinates do not cause distinct nodes to merge.
+    edges = unique_edges
     neighbors = [[] for _ in range(n)]
     for u, v in edges:
         neighbors[u].append(int(v))
@@ -352,6 +361,9 @@ def inspect_graph(positions, edges, patch_size, tolerance):
     stats = {
         "nodes": n, "edges": len(edges), "beta0": components,
         "beta1": len(edges) - n + components,
+        "source_edges": source_edges,
+        "duplicate_edges_removed": duplicates_removed,
+        "source_beta1_multigraph": source_edges - n + components,
         "endpoints": int(np.sum(degrees == 1)),
         "bifurcations": int(np.sum(degrees >= 3)),
         "isolated_nodes": int(np.sum(degrees == 0)),
@@ -364,13 +376,16 @@ def inspect_graph(positions, edges, patch_size, tolerance):
 
 def summarize(records):
     result = {"graphs": len(records)}
-    for key in ("nodes", "edges", "beta0", "beta1", "endpoints", "bifurcations", "isolated_nodes"):
+    for key in ("nodes", "edges", "beta0", "beta1", "endpoints", "bifurcations", "isolated_nodes",
+                "source_edges", "duplicate_edges_removed", "source_beta1_multigraph"):
         values = np.asarray([row[key] for row in records])
         result[key] = {"min": int(values.min()), "max": int(values.max()),
                        "mean": float(values.mean()), "p95": float(np.quantile(values, .95))}
     result["empty_graphs"] = sum(row["nodes"] == 0 for row in records)
     result["graphs_with_cycles"] = sum(row["beta1"] > 0 for row in records)
     result["graphs_with_zero_length_edges"] = sum(row["zero_length_edges"] > 0 for row in records)
+    result["graphs_with_duplicate_edges"] = sum(row["duplicate_edges_removed"] > 0 for row in records)
+    result["duplicate_edges_removed_total"] = sum(row["duplicate_edges_removed"] for row in records)
     return result
 
 
@@ -439,7 +454,8 @@ def prepare(config, output, *, dataset_root=None, patient_split_file=None, smoke
             positions, edges = reader(Path(row["graph_path"]))
             try:
                 positions, edges, sp, stats = inspect_graph(positions, edges, patch_size,
-                                                           config["coordinate_tolerance"])
+                    config["coordinate_tolerance"],
+                    duplicate_edge_policy=config.get("duplicate_edge_policy", "error"))
             except ValueError as error:
                 raise ValueError(f"{row['sample_id']}: {error}") from error
             graphs.append((positions, edges, sp))
@@ -478,6 +494,8 @@ def prepare(config, output, *, dataset_root=None, patient_split_file=None, smoke
         "test_graph_content_read": include_test, "smoke": smoke_count is not None,
         "minimum_node_capacity_train_val": max_nodes, "statistics": summaries,
         "coordinate_order": config["coordinate_order"], "patch_size": patch_size.tolist(),
+        "graph_representation": "simple_undirected",
+        "duplicate_edge_policy": config.get("duplicate_edge_policy", "error"),
         "shortest_path_unreachable": "number_of_nodes_in_that_graph",
     }
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
@@ -490,13 +508,16 @@ def prepare(config, output, *, dataset_root=None, patient_split_file=None, smoke
         f"Selected patches: {report['selected_counts']}", "",
         f"Patient counts in source split: {counts}", "",
         f"Audited graph content: {', '.join(audited)}", "",
+        f"Duplicate-edge policy: {report['duplicate_edge_policy']}. Exported graphs are simple and undirected.", "",
+        "Edges, degrees and cycle counts describe the exported simple graph. Source edge counts and source_beta1_multigraph retain the source multiplicity audit in graph_statistics.csv and report.json. Coordinates and node IDs are preserved; source VTP files are unchanged.", "",
         f"Minimum capacity required by train/validation: **{max_nodes} nodes**", "",
         "This is a smoke export." if smoke_count else "This is the full pilot export.", "",
-        "| Split | Graphs | Mean nodes | Max nodes | Graphs with cycles | Empty graphs |",
-        "|---|---:|---:|---:|---:|---:|"]
+        "| Split | Graphs | Mean nodes | Max nodes | Graphs with cycles | Empty graphs | Graphs with duplicate edges | Duplicate edges removed |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|"]
     for split, stats in summaries.items():
         lines.append(f"| {split} | {stats['graphs']} | {stats['nodes']['mean']:.2f} | "
-                     f"{stats['nodes']['max']} | {stats['graphs_with_cycles']} | {stats['empty_graphs']} |")
+                     f"{stats['nodes']['max']} | {stats['graphs_with_cycles']} | {stats['empty_graphs']} | "
+                     f"{stats['graphs_with_duplicate_edges']} | {stats['duplicate_edges_removed_total']} |")
     lines += ["", "Test patches are reserved by manifest. Their graph content is untouched."
               if not include_test else "Test graph content was explicitly exported.", "",
               "NPZ archives require the vascular adapter; the upstream categorical HDF5 loader cannot read them.", ""]

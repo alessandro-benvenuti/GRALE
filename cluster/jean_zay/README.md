@@ -121,6 +121,8 @@ to this direct Python command. The Slurm launcher passes it automatically.
   `select_capped_records(..., mode='seeded_random')` contract;
 - selection within each existing split, independent of graph properties;
 - normalized D/H/W coordinates (`voxel_index / axis_size`) in 64-cubed patches;
+- one undirected edge per node-ID pair (`duplicate_edge_policy: coalesce`),
+  matching GRALE's binary adjacency representation;
 - no Laplacian positional features.
 
 The patient-generation seed (42 by default) and patch-selection seed (364505)
@@ -209,8 +211,22 @@ packages. W&B compute logging defaults to offline.
 It reads existing VTP graph labels, without loading MRI/segmentation arrays or
 regenerating source patches. It retains disconnected components, isolated nodes,
 sparse graphs and empty graphs. It rejects malformed coordinates, invalid edge
-indices, duplicate undirected edges and self-loops rather than silently editing
-the target. No selected graph is filtered or truncated by node count.
+indices and self-loops. No selected graph is filtered or truncated by node count.
+
+The source generator permits multigraphs, while GRALE uses binary adjacency.
+The pilot therefore exports a simple undirected graph: sort each endpoint pair
+and coalesce repeated pairs, including reversed orientations. This compares node
+IDs only; it never merges nodes with equal coordinates or edits source VTP files.
+Set `duplicate_edge_policy` to `error` to reject repeated pairs instead. Missing
+policy defaults to `error` for custom configurations.
+
+Each graph's audit records `source_edges`, `duplicate_edges_removed` and
+`source_beta1_multigraph`. Exported `edges`, degrees, bifurcations, `beta1` and
+shortest paths refer to the simple graph. Coalescing preserves reachability and
+unweighted shortest paths, but can lower multigraph cycle rank and degrees;
+it must not be described as preserving multigraph topology. Reports summarize
+how many graphs were affected and how many edge rows were removed. The original
+VTP remains the record of edge multiplicity, which this pilot does not reconstruct.
 
 Outputs:
 

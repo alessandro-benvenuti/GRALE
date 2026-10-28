@@ -53,6 +53,29 @@ class GraphInspectionTests(unittest.TestCase):
         np.testing.assert_array_equal(perm_sp, sp[order][:, order])
         self.assertEqual(stats, perm_stats)
 
+    def test_coalescing_preserves_nodes_paths_and_simple_cycles(self):
+        xyz = np.array([[0, 0, 0], [.1, 0, 0], [0, .1, 0], [.7, .7, .7], [0, 0, 0]])
+        source_edges = np.array([[1, 0], [0, 1], [1, 0], [2, 1], [1, 2], [2, 0]])
+        original_edges = source_edges.copy()
+        points, edges, sp, stats = prep.inspect_graph(xyz, source_edges, np.array([64]*3), 1e-5,
+                                                     duplicate_edge_policy="coalesce")
+        _, _, expected_sp, _ = prep.inspect_graph(xyz, [[0, 1], [0, 2], [1, 2]], np.array([64]*3), 1e-5)
+        np.testing.assert_allclose(points, xyz)
+        np.testing.assert_array_equal(source_edges, original_edges)
+        np.testing.assert_array_equal(edges, [[0, 1], [0, 2], [1, 2]])
+        np.testing.assert_array_equal(sp, expected_sp)
+        self.assertEqual((stats["nodes"], stats["isolated_nodes"], stats["duplicate_positions"]), (5, 2, 1))
+        self.assertEqual((stats["source_edges"], stats["edges"], stats["duplicate_edges_removed"]), (6, 3, 3))
+        self.assertEqual((stats["beta0"], stats["beta1"], stats["source_beta1_multigraph"]), (3, 1, 4))
+        self.assertEqual(stats["max_degree"], 2)
+        self.assertEqual(stats["bifurcations"], 0)
+
+    def test_coalescing_still_rejects_self_loops_and_invalid_endpoints(self):
+        for edges in ([[0, 0]], [[0, 1], [1, 0], [0, 2]]):
+            with self.subTest(edges=edges), self.assertRaises(ValueError):
+                prep.inspect_graph([[0, 0, 0], [.1, 0, 0]], edges, np.array([64]*3), 1e-5,
+                                   duplicate_edge_policy="coalesce")
+
     def test_selection_matches_previous_project_hash_contract(self):
         rows = [{"sample_id": f"sample_{i:04d}"} for i in range(100)]
         expected = sorted(sorted(rows, key=lambda row: (
@@ -128,6 +151,36 @@ class PreparationTests(unittest.TestCase):
         report = prep.prepare(self.config, self.base / "smoke", smoke_count=1, reader=self.reader)
         self.assertEqual(report["selected_counts"], {"train": 1, "val": 1, "test": 2})
         self.assertTrue(report["smoke"])
+
+    def test_duplicate_policy_is_exported_and_audited(self):
+        before = {path: path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
+        def duplicated_reader(path):
+            points, _ = self.reader(path)
+            return points, np.array([[0, 1], [1, 0], [0, 1]])
+        out = self.base / "coalesced"
+        report = prep.prepare(self.config, out, reader=duplicated_reader)
+        self.assertEqual(report["duplicate_edge_policy"], "coalesce")
+        self.assertEqual(report["graph_representation"], "simple_undirected")
+        for split in ("train", "val"):
+            self.assertEqual(report["statistics"][split]["duplicate_edges_removed_total"], 4)
+            self.assertEqual(report["statistics"][split]["graphs_with_duplicate_edges"], 2)
+            self.assertEqual(report["statistics"][split]["source_beta1_multigraph"]["max"], 2)
+            self.assertEqual(report["statistics"][split]["beta1"]["max"], 0)
+        with np.load(out / "graphs/train.npz", allow_pickle=False) as archive:
+            np.testing.assert_array_equal(archive["edge_offsets"], [0, 1, 2])
+            np.testing.assert_array_equal(archive["edge_index"], [[0, 1], [0, 1]])
+        with (out / "graph_statistics.csv").open() as handle:
+            self.assertTrue(all(row["duplicate_edges_removed"] == "2" for row in csv.DictReader(handle)))
+        self.assertFalse(report["test_graph_content_read"])
+        self.assertEqual(before, {path: path.read_bytes() for path in before})
+        self.config["duplicate_edge_policy"] = "error"
+        with self.assertRaisesRegex(ValueError, "sample_.*Duplicate undirected edge"):
+            prep.prepare(self.config, self.base / "strict", reader=duplicated_reader)
+
+    def test_invalid_duplicate_policy_fails_preflight(self):
+        self.config["duplicate_edge_policy"] = "typo"
+        with self.assertRaisesRegex(ValueError, "duplicate_edge_policy"):
+            prep.validate_inputs(self.config)
 
     def test_missing_csv_is_recovered_with_exact_original_hash(self):
         original = self.base / "new_split.csv"
@@ -351,9 +404,10 @@ class VtkReaderTests(unittest.TestCase):
         points.InsertNextPoint(.1, .2, .3)
         points.InsertNextPoint(.3, .4, .5)
         cells = vtkCellArray()
-        cells.InsertNextCell(2)
-        cells.InsertCellPoint(0)
-        cells.InsertCellPoint(1)
+        for left, right in ((0, 1), (1, 0), (0, 1)):
+            cells.InsertNextCell(2)
+            cells.InsertCellPoint(left)
+            cells.InsertCellPoint(right)
         poly = vtkPolyData()
         poly.SetPoints(points)
         poly.SetLines(cells)
@@ -374,8 +428,10 @@ class VtkReaderTests(unittest.TestCase):
         report = json.loads((output / "report.json").read_text())
         self.assertEqual(report["selected_counts"], {"train": 2, "val": 2, "test": 2})
         self.assertFalse(report["test_graph_content_read"])
+        self.assertEqual(report["statistics"]["train"]["duplicate_edges_removed_total"], 4)
         with np.load(output / "graphs/val.npz", allow_pickle=False) as data:
             np.testing.assert_allclose(data["node_features"][0], [.1, .2, .3])
+            np.testing.assert_array_equal(data["edge_offsets"], [0, 1, 2])
 
 
 class ClusterPathsTests(unittest.TestCase):
