@@ -120,12 +120,20 @@ def validate_inputs(config, *, dataset_root=None, patient_split_file=None):
     index_file = (root / config["patch_index_file"]).resolve()
     generation, completion = root / "generation_config.json", root / "generation_summary.json"
     metadata = {}
-    if config.get("require_generation_metadata", True):
+    if generation.is_file():
         metadata = json.loads(generation.read_text())
         if metadata.get("patch_size") != patch_size.tolist():
             raise ValueError("Configured patch size differs from generation_config.json")
-        if json.loads(completion.read_text()).get("complete") is not True:
-            raise ValueError("The source dataset is not marked complete")
+        if not metadata.get("split_sha256"):
+            raise ValueError("generation_config.json has no split_sha256")
+    elif config.get("require_generation_config", config.get("require_generation_metadata", True)):
+        raise FileNotFoundError(f"Required generation configuration is absent: {generation}")
+    summary = json.loads(completion.read_text())
+    if summary.get("complete") is not True:
+        raise ValueError("The source dataset is not marked complete in generation_summary.json")
+    if (metadata.get("fingerprint") is not None and summary.get("fingerprint") is not None
+            and metadata["fingerprint"] != summary["fingerprint"]):
+        raise ValueError("Generation configuration and summary fingerprints differ")
     configured = config.get("patient_split_file")
     split_file = ((root / Path(patient_split_file).expanduser()).resolve() if patient_split_file
                   else (root / configured).resolve() if configured else None)
@@ -148,7 +156,7 @@ def validate_inputs(config, *, dataset_root=None, patient_split_file=None):
             patients = patients_from_index(index_file)
             split_bytes = canonical_split_bytes(patients)
     split_hash = hashlib.sha256(split_bytes).hexdigest()
-    if config.get("require_generation_metadata", True) and split_hash != metadata.get("split_sha256"):
+    if metadata and split_hash != metadata["split_sha256"]:
         if split_source == "patch_index_recovery":
             raise ValueError("Recovered assignments do not reproduce the generation split hash. "
                              "Locate the original CSV and set GRALE_PATIENT_SPLIT_FILE to its path; "
@@ -162,10 +170,22 @@ def validate_inputs(config, *, dataset_root=None, patient_split_file=None):
         count = int(config["sample_counts"][split])
         if count < 1 or len(index[split]) < count:
             raise ValueError(f"{split}: requested {count} patches, available {len(index[split])}")
+    for key in ("completed_patients", "expected_patients"):
+        if key in summary and summary[key] != len(patients):
+            raise ValueError(f"generation_summary.json {key} differs from the indexed patient count")
+    if "patches_indexed" in summary and summary["patches_indexed"] != sum(map(len, index.values())):
+        raise ValueError("generation_summary.json patches_indexed differs from the patch index")
+    provenance = {
+        "generation_config_present": generation.is_file(),
+        "original_split_hash_verified": bool(metadata),
+        "generation_patch_size_verified": bool(metadata),
+        "source_dataset_marked_complete": True,
+        "patient_assignments_checked_against_patch_index": True,
+    }
     return {"root": root, "patch_size": patch_size, "split_file": split_file,
             "split_source": split_source, "split_bytes": split_bytes, "split_sha256": split_hash,
             "index_file": index_file, "index": index, "generation": generation,
-            "completion": completion, "patient_counts": counts}
+            "completion": completion, "patient_counts": counts, "provenance": provenance}
 
 
 def input_summary(inputs):
@@ -174,6 +194,7 @@ def input_summary(inputs):
             "patient_split_file": str(inputs["split_file"]) if inputs["split_file"] else None,
             "patient_split_sha256": inputs["split_sha256"],
             "patient_counts": inputs["patient_counts"],
+            "provenance": inputs["provenance"],
             "available_patch_counts": {split: len(rows) for split, rows in inputs["index"].items()}}
 
 
@@ -443,6 +464,7 @@ def prepare(config, output, *, dataset_root=None, patient_split_file=None, smoke
         "preparation_script_sha256": fingerprint(Path(__file__)),
         "patient_split_file": str(split_file) if split_file else None,
         "patient_split_source": inputs["split_source"],
+        "provenance": inputs["provenance"],
         "patient_split_sha256": inputs["split_sha256"],
         "exported_patient_split_file": str(output / "patient_split.csv"),
         "patch_index_file": str(index_file), "patch_index_sha256": fingerprint(index_file),
@@ -461,7 +483,10 @@ def prepare(config, output, *, dataset_root=None, patient_split_file=None, smoke
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     lines = ["# Vascular graph preparation report", "",
         f"Source: `{root}`", "",
-        f"Patient split: `{split_file}`" if split_file else "Patient split: recovered from patch_index.csv and verified against generation SHA256.", "",
+        f"Patient split: `{split_file}`" if split_file else "Patient split: existing assignments recovered from patch_index.csv.", "",
+        f"Original generation split hash verified: {inputs['provenance']['original_split_hash_verified']}", "",
+        f"Patch size verified against generation configuration: {inputs['provenance']['generation_patch_size_verified']}", "",
+        "Source generation summary marks the dataset complete.", "",
         f"Selected patches: {report['selected_counts']}", "",
         f"Patient counts in source split: {counts}", "",
         f"Audited graph content: {', '.join(audited)}", "",

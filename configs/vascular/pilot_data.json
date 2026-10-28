@@ -3,7 +3,7 @@
   "dataset_root": "/lustre/fsn1/projects/rech/vnc/upz73jr/datasets/syntheticMRI/new_patches_boundary",
   "patient_split_file": "../new_split.csv",
   "patch_index_file": "patch_index.csv",
-  "require_generation_metadata": true,
+  "require_generation_config": false,
   "selection_seed": 364505,
   "sample_counts": {"train": 4000, "val": 1000, "test": 5000},
   "expected_patient_counts": {"train": 95, "val": 20, "test": 21},

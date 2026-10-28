@@ -56,8 +56,11 @@ uncorrected `new_patches/`. The generator's default patient-CSV location is:
 The documented generated split has 95 training, 20 validation and 21 test
 patients (70/15/15 rounded across 136 patients). Reuse those assignments.
 The old `splits.csv` with 55/14/67 patients is a different benchmark.
-These paths/protocol were recovered from code and documentation, not inspected
-on Lustre from the local Mac. The preparation job verifies them on Jean Zay.
+The Jean Zay inventory supplied on 2026-10-28 confirms 95/20/21 patients and
+91,200/19,200/20,160 indexed patches. Image, segmentation and VTP directory counts
+match those patch totals. This copy has `generation_summary.json`, but lacks
+`generation_config.json` and a standalone patient split CSV. File counts alone
+do not establish graph content validity; the CPU export audits selected graphs.
 
 Before attempting preparation on a dataset copy with missing metadata, inspect
 the actual files from the login node:
@@ -73,16 +76,26 @@ patient/patch counts, and file counts and example names under each split's
 `raw`, `seg` and `vtp` folders. It reports conflicting index patient assignments
 without stopping the inventory. It does not read image, segmentation or graph
 contents, generate data, or submit a job. Use this output to decide whether to
-correct paths, recover metadata or implement additional loading/extraction code;
-missing generation metadata still blocks the strict preparation preflight.
+correct paths, recover metadata or implement additional loading/extraction code.
 
 The standalone CSV may not have been copied with the patch directory. If it is
 absent, the script first looks for a nearby split CSV matching the generation
-fingerprint, then recovers the **existing** assignments from `patch_index.csv`.
-Recovery must reproduce the original generator's CSV SHA256 exactly; conflicting
-assignments or a hash mismatch fail before submission. This does not resample
-patients or alter source data. A verified copy is saved as `patient_split.csv`
-inside the preparation output.
+fingerprint when available, then recovers the **existing** assignments from
+`patch_index.csv`. This does not resample patients or alter source data. A copy
+is saved as `patient_split.csv` inside the preparation output.
+
+For this materialized dataset, `require_generation_config` is false. An absent
+generation configuration is recorded explicitly: the recovered split hash is
+saved, but cannot be checked against the original generator's checksum, and the
+configured patch size cannot be checked against that missing metadata. Any
+configuration that is present must still match the patch size and split hash.
+Set `require_generation_config` to true to require the original configuration.
+
+`generation_summary.json` must exist and declare `complete: true`. Its patient
+and patch totals are checked against the index when present. Patient counts must
+match 95/20/21, every indexed patient must belong to exactly one split, and any
+supplied CSV must agree with the index. Conflicts or available metadata
+mismatches fail before submission; missing configuration is never fabricated.
 
 For a CSV stored elsewhere, set an explicit override before submission:
 
@@ -112,9 +125,11 @@ to this direct Python command. The Slurm launcher passes it automatically.
 
 The patient-generation seed (42 by default) and patch-selection seed (364505)
 serve different purposes; the existing patient split is not regenerated.
-The script checks every patch-index patient assignment against the verified
-split, the generation metadata's split fingerprint and patch size, and the
-dataset's completion marker. It fails on mismatches instead of using old data.
+The script checks patch-index patient assignments and the completion summary.
+Available generation configuration is also checked; the report's `provenance`
+fields distinguish checks performed from unavailable original metadata. Selected
+image/segmentation/VTP paths must exist, and train/validation graph coordinates
+and connectivity are validated during export.
 
 ## Commands on the login node
 

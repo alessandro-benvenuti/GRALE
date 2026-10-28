@@ -157,6 +157,62 @@ class PreparationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "GRALE_PATIENT_SPLIT_FILE"):
             prep.validate_inputs(self.config)
 
+    def test_materialized_dataset_without_config_or_csv(self):
+        original = (self.base / "new_split.csv").read_bytes()
+        (self.base / "new_split.csv").unlink()
+        (self.root / "generation_config.json").unlink()
+        (self.root / "generation_summary.json").write_text(json.dumps({
+            "complete": True, "completed_patients": 3, "expected_patients": 3,
+            "patches_indexed": 12}))
+        report = prep.prepare(self.config, self.base / "materialized", reader=self.reader)
+        self.assertEqual((self.base / "materialized/patient_split.csv").read_bytes(), original)
+        self.assertEqual(report["patient_split_source"], "patch_index_recovery")
+        self.assertFalse(report["provenance"]["original_split_hash_verified"])
+        self.assertFalse(report["provenance"]["generation_patch_size_verified"])
+        self.assertTrue(report["provenance"]["source_dataset_marked_complete"])
+        self.assertIsNone(report["generation_config_sha256"])
+        self.assertFalse(report["test_graph_content_read"])
+        self.assertFalse((self.root / "generation_config.json").exists())
+        self.assertFalse((self.base / "new_split.csv").exists())
+        config_file = self.base / "config.json"
+        config_file.write_text(json.dumps(self.config))
+        result = subprocess.run([sys.executable, str(REPO / "scripts/prepare_vascular_pilot.py"),
+            "--config", str(config_file), "--check-inputs"], capture_output=True, text=True, check=True)
+        self.assertFalse(json.loads(result.stdout)["provenance"]["original_split_hash_verified"])
+
+    def test_summary_remains_required_without_generation_config(self):
+        (self.root / "generation_config.json").unlink()
+        summary = self.root / "generation_summary.json"
+        for payload in ({"complete": False}, {}):
+            summary.write_text(json.dumps(payload))
+            with self.assertRaisesRegex(ValueError, "not marked complete"):
+                prep.validate_inputs(self.config)
+        summary.unlink()
+        with self.assertRaises(FileNotFoundError):
+            prep.validate_inputs(self.config)
+
+    def test_summary_counts_must_match_index(self):
+        for key in ("completed_patients", "expected_patients", "patches_indexed"):
+            with self.subTest(key=key):
+                (self.root / "generation_summary.json").write_text(json.dumps({"complete": True, key: 999}))
+                with self.assertRaisesRegex(ValueError, key):
+                    prep.validate_inputs(self.config)
+
+    def test_config_can_still_be_required_explicitly(self):
+        (self.root / "generation_config.json").unlink()
+        self.config["require_generation_config"] = True
+        with self.assertRaisesRegex(FileNotFoundError, "Required generation configuration"):
+            prep.validate_inputs(self.config)
+
+    def test_metadata_less_recovery_still_rejects_patient_leakage(self):
+        (self.root / "generation_config.json").unlink()
+        (self.base / "new_split.csv").unlink()
+        rows = copy.deepcopy(self.rows)
+        rows[0]["split"] = "val"
+        self.write_index(rows)
+        with self.assertRaisesRegex(ValueError, "multiple patch-index splits"):
+            prep.validate_inputs(self.config)
+
     def test_recovery_rejects_patient_in_multiple_splits(self):
         (self.base / "new_split.csv").unlink()
         rows = copy.deepcopy(self.rows)
