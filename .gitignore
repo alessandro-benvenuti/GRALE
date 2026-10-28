@@ -5,4 +5,9 @@ checkpoints/*
 lightning_logs
 logs
 wandb
-venv 
+venv
+.venv
+__pycache__/
+.pytest_cache/
+prepared_data/
+*.npz

@@ -35,6 +35,13 @@ See [demo.ipynb](demo.ipynb) for full examples.
 
 ## Installation
 
+For the vascular reconstruction pilot on Jean Zay, use
+[cluster/jean_zay/README.md](cluster/jean_zay/README.md). It creates separate
+module-backed environments in `$SCRATCH/venvs`, freezes the 4,000/1,000/5,000
+patch selection, and exports graph data using a CPU allocation. The vascular
+model adaptation is a subsequent step; upstream `train.py` does not yet consume
+the exported continuous-coordinate archives.
+
 ```bash
 # Python Version: 3.11.14
 # Clone the repo

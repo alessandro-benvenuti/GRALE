@@ -1,0 +1,12 @@
+# Inherit the architecture-specific PyTorch/CUDA, NumPy and SciPy modules.
+# setup_environment.sh constrains those distributions to their loaded versions.
+lightning==2.5.4
+pytorch-lightning==2.5.4
+torchmetrics==1.5.2
+wandb==0.28.1
+h5py==3.11.0
+vtk==9.5.2
+PyYAML==6.0.2
+joblib==1.5.3
+networkx==3.4.2
+matplotlib==3.8.4

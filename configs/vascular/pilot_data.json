@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "dataset_root": "/lustre/fsn1/projects/rech/vnc/upz73jr/datasets/syntheticMRI/new_patches_boundary",
+  "patient_split_file": "../new_split.csv",
+  "patch_index_file": "patch_index.csv",
+  "require_generation_metadata": true,
+  "selection_seed": 364505,
+  "sample_counts": {"train": 4000, "val": 1000, "test": 5000},
+  "expected_patient_counts": {"train": 95, "val": 20, "test": 21},
+  "coordinate_order": ["D", "H", "W"],
+  "coordinate_space": "normalized",
+  "patch_size": [64, 64, 64],
+  "coordinate_tolerance": 0.00001,
+  "laplacian_features": false
+}
