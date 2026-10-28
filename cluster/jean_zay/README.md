@@ -169,8 +169,9 @@ If the smoke is successful, submit the full CPU export:
 bash cluster/jean_zay/submit_prepare.sh full
 ```
 
-The CPU job uses account `vnc@cpu`, QoS `qos_cpu-t4`, two CPUs, 16 GB RAM and a
-four-hour limit. It loads the corresponding PyTorch module without an `arch/*`
+The CPU job uses account `vnc@cpu`, QoS `qos_cpu-t4`, two CPUs and a four-hour
+limit. Memory is allocated by Jean Zay; explicit `--mem`, `--mem-per-cpu` and
+`--mem-per-gpu` requests are forbidden. It loads the corresponding PyTorch module without an `arch/*`
 module, following the previous project's CPU analysis jobs. No GPU is reserved.
 
 Separately, verify the GPU environment in a bounded allocation:
