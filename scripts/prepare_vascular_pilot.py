@@ -78,6 +78,105 @@ def read_index(path, patients):
     return rows
 
 
+def canonical_split_bytes(patients):
+    """Reproduce the generator's saved CSV, without generating assignments."""
+    def sort_key(key):
+        return (0, int(key)) if key.isdecimal() else (1, key)
+
+    rows = ["patient_id,split"]
+    rows.extend(f"{key},{patients[key]}" for key in sorted(patients, key=sort_key))
+    return ("\n".join(rows) + "\n").encode("utf-8")
+
+
+def patients_from_index(path):
+    """Recover existing patient membership from provenance, not graph labels."""
+    patients = {}
+    with Path(path).open(newline="") as handle:
+        reader = csv.DictReader(handle)
+        if not {"patient_id", "split"} <= set(reader.fieldnames or []):
+            raise ValueError("Patch index must contain patient_id and split")
+        for row in reader:
+            key, split = patient_id(row["patient_id"]), row["split"]
+            if not key or split not in SPLITS:
+                raise ValueError(f"Invalid patch-index patient assignment: {row}")
+            if key in patients and patients[key] != split:
+                raise ValueError(f"Patient {key} occurs in multiple patch-index splits")
+            patients[key] = split
+    if not patients:
+        raise ValueError("Patch index has no patient assignments")
+    return patients
+
+
+def validate_inputs(config, *, dataset_root=None, patient_split_file=None):
+    """Validate metadata on the login node too; do not read graph/image arrays."""
+    root = Path(dataset_root or config["dataset_root"]).expanduser().resolve()
+    if config["schema_version"] != 1 or config["coordinate_order"] != ["D", "H", "W"]:
+        raise ValueError("Unsupported configuration schema or coordinate order")
+    if config["coordinate_space"] != "normalized" or config["laplacian_features"]:
+        raise ValueError("This pilot requires normalized coordinates and no Laplacian features")
+    patch_size = np.asarray(config["patch_size"], dtype=np.int64)
+    if patch_size.shape != (3,) or np.any(patch_size <= 0):
+        raise ValueError("patch_size must contain three positive integers")
+    index_file = (root / config["patch_index_file"]).resolve()
+    generation, completion = root / "generation_config.json", root / "generation_summary.json"
+    metadata = {}
+    if config.get("require_generation_metadata", True):
+        metadata = json.loads(generation.read_text())
+        if metadata.get("patch_size") != patch_size.tolist():
+            raise ValueError("Configured patch size differs from generation_config.json")
+        if json.loads(completion.read_text()).get("complete") is not True:
+            raise ValueError("The source dataset is not marked complete")
+    configured = config.get("patient_split_file")
+    split_file = ((root / Path(patient_split_file).expanduser()).resolve() if patient_split_file
+                  else (root / configured).resolve() if configured else None)
+    split_source = "csv"
+    if patient_split_file and not split_file.is_file():
+        raise FileNotFoundError(f"Explicit patient split file does not exist: {split_file}")
+    if split_file is not None and split_file.is_file():
+        patients, split_bytes = read_patients(split_file), split_file.read_bytes()
+    else:
+        # Only accept nearby alternatives if they match the original byte hash.
+        candidates = sorted(set(root.glob("*split*.csv")) | set(root.parent.glob("*split*.csv")))
+        expected_hash = metadata.get("split_sha256")
+        matches = [path for path in candidates if path.is_file() and fingerprint(path) == expected_hash]
+        if matches:
+            split_file = matches[0].resolve()
+            patients, split_bytes = read_patients(split_file), split_file.read_bytes()
+        else:
+            split_file = None
+            split_source = "patch_index_recovery"
+            patients = patients_from_index(index_file)
+            split_bytes = canonical_split_bytes(patients)
+    split_hash = hashlib.sha256(split_bytes).hexdigest()
+    if config.get("require_generation_metadata", True) and split_hash != metadata.get("split_sha256"):
+        if split_source == "patch_index_recovery":
+            raise ValueError("Recovered assignments do not reproduce the generation split hash. "
+                             "Locate the original CSV and set GRALE_PATIENT_SPLIT_FILE to its path; "
+                             "do not regenerate the split.")
+        raise ValueError("generation_config.json does not match the saved patient split")
+    counts = dict(Counter(patients.values()))
+    if counts != config["expected_patient_counts"]:
+        raise ValueError(f"Unexpected patient split {counts}; expected {config['expected_patient_counts']}")
+    index = read_index(index_file, patients)
+    for split in SPLITS:
+        count = int(config["sample_counts"][split])
+        if count < 1 or len(index[split]) < count:
+            raise ValueError(f"{split}: requested {count} patches, available {len(index[split])}")
+    return {"root": root, "patch_size": patch_size, "split_file": split_file,
+            "split_source": split_source, "split_bytes": split_bytes, "split_sha256": split_hash,
+            "index_file": index_file, "index": index, "generation": generation,
+            "completion": completion, "patient_counts": counts}
+
+
+def input_summary(inputs):
+    return {"dataset_root": str(inputs["root"]),
+            "patient_split_source": inputs["split_source"],
+            "patient_split_file": str(inputs["split_file"]) if inputs["split_file"] else None,
+            "patient_split_sha256": inputs["split_sha256"],
+            "patient_counts": inputs["patient_counts"],
+            "available_patch_counts": {split: len(rows) for split, rows in inputs["index"].items()}}
+
+
 def select_records(rows, count, *, seed, split):
     """Same SHA256 membership/order as GNBM select_capped_records."""
     if count < 1 or len(rows) < count:
@@ -225,35 +324,15 @@ def write_archive(path, records, graphs):
     )
 
 
-def prepare(config, output, *, dataset_root=None, smoke_count=None, include_test=False,
+def prepare(config, output, *, dataset_root=None, patient_split_file=None, smoke_count=None, include_test=False,
             reader=read_vtp):
-    root = Path(dataset_root or config["dataset_root"]).expanduser().resolve()
-    if config["schema_version"] != 1 or config["coordinate_order"] != ["D", "H", "W"]:
-        raise ValueError("Unsupported configuration schema or coordinate order")
-    if config["coordinate_space"] != "normalized" or config["laplacian_features"]:
-        raise ValueError("This pilot requires normalized coordinates and no Laplacian features")
-    patch_size = np.asarray(config["patch_size"], dtype=np.int64)
-    if patch_size.shape != (3,) or np.any(patch_size <= 0):
-        raise ValueError("patch_size must contain three positive integers")
+    inputs = validate_inputs(config, dataset_root=dataset_root, patient_split_file=patient_split_file)
+    root, patch_size = inputs["root"], inputs["patch_size"]
     if smoke_count is not None and smoke_count < 1:
         raise ValueError("smoke_count must be positive")
-    split_file = (root / config["patient_split_file"]).resolve()
-    index_file = (root / config["patch_index_file"]).resolve()
-    patients = read_patients(split_file)
-    counts = dict(Counter(patients.values()))
-    if counts != config["expected_patient_counts"]:
-        raise ValueError(f"Unexpected patient split {counts}; expected {config['expected_patient_counts']}")
-    generation = root / "generation_config.json"
-    completion = root / "generation_summary.json"
-    if config.get("require_generation_metadata", True):
-        metadata = json.loads(generation.read_text())
-        if metadata.get("split_sha256") != fingerprint(split_file):
-            raise ValueError("generation_config.json does not match the saved patient split")
-        if metadata.get("patch_size") != patch_size.tolist():
-            raise ValueError("Configured patch size differs from generation_config.json")
-        if json.loads(completion.read_text()).get("complete") is not True:
-            raise ValueError("The source dataset is not marked complete")
-    index = read_index(index_file, patients)
+    split_file, index_file = inputs["split_file"], inputs["index_file"]
+    generation, completion = inputs["generation"], inputs["completion"]
+    counts, index = inputs["patient_counts"], inputs["index"]
     selected = {}
     for split in SPLITS:
         count = int(config["sample_counts"][split])
@@ -271,7 +350,10 @@ def prepare(config, output, *, dataset_root=None, smoke_count=None, include_test
     # Atomic creation also prevents two concurrent submissions sharing a target.
     output.mkdir(parents=True, exist_ok=False)
     effective = dict(config, dataset_root=str(root))
+    if patient_split_file:
+        effective["patient_split_file"] = str(split_file)
     (output / "resolved_config.json").write_text(json.dumps(effective, indent=2) + "\n")
+    (output / "patient_split.csv").write_bytes(inputs["split_bytes"])
     for split in SPLITS:
         write_csv(output / "manifests" / f"{split}.csv", selected[split], MANIFEST_FIELDS)
     audited = list(SPLITS) if include_test else ["train", "val"]
@@ -307,7 +389,10 @@ def prepare(config, output, *, dataset_root=None, smoke_count=None, include_test
         "schema_version": 1, "created_utc": datetime.now(timezone.utc).isoformat(),
         "git_commit": commit, "dataset_root": str(root),
         "preparation_script_sha256": fingerprint(Path(__file__)),
-        "patient_split_file": str(split_file), "patient_split_sha256": fingerprint(split_file),
+        "patient_split_file": str(split_file) if split_file else None,
+        "patient_split_source": inputs["split_source"],
+        "patient_split_sha256": inputs["split_sha256"],
+        "exported_patient_split_file": str(output / "patient_split.csv"),
         "patch_index_file": str(index_file), "patch_index_sha256": fingerprint(index_file),
         "generation_config_sha256": fingerprint(generation) if generation.is_file() else None,
         "generation_summary_sha256": fingerprint(completion) if completion.is_file() else None,
@@ -323,7 +408,8 @@ def prepare(config, output, *, dataset_root=None, smoke_count=None, include_test
     }
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     lines = ["# Vascular graph preparation report", "",
-        f"Source: `{root}`", "", f"Patient split: `{split_file}`", "",
+        f"Source: `{root}`", "",
+        f"Patient split: `{split_file}`" if split_file else "Patient split: recovered from patch_index.csv and verified against generation SHA256.", "",
         f"Selected patches: {report['selected_counts']}", "",
         f"Patient counts in source split: {counts}", "",
         f"Audited graph content: {', '.join(audited)}", "",
@@ -346,13 +432,22 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path(__file__).resolve().parents[1] / "configs/vascular/pilot_data.json")
     parser.add_argument("--dataset-root", type=Path)
-    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--patient-split-file", type=Path, help="Override the location of the saved patient CSV")
+    parser.add_argument("--check-inputs", action="store_true", help="Validate metadata and split recovery without writing output or reading graphs")
+    parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--smoke-count", type=int)
     parser.add_argument("--include-test-graphs", action="store_true",
                         help="Read/export test GT only for an explicitly frozen evaluation protocol")
     args = parser.parse_args(argv)
-    report = prepare(json.loads(args.config.read_text()), args.output_dir,
-        dataset_root=args.dataset_root, smoke_count=args.smoke_count,
+    config = json.loads(args.config.read_text())
+    if args.check_inputs:
+        print(json.dumps(input_summary(validate_inputs(config, dataset_root=args.dataset_root,
+                         patient_split_file=args.patient_split_file)), indent=2))
+        return 0
+    if args.output_dir is None:
+        parser.error("--output-dir is required unless --check-inputs is used")
+    report = prepare(config, args.output_dir,
+        dataset_root=args.dataset_root, patient_split_file=args.patient_split_file, smoke_count=args.smoke_count,
         include_test=args.include_test_graphs)
     print(json.dumps({key: report[key] for key in ("selected_counts", "audited_splits", "minimum_node_capacity_train_val")}, indent=2))
     print(f"Report: {args.output_dir / 'report.md'}")

@@ -14,6 +14,9 @@ source "$repo_dir/cluster/jean_zay/env.sh" "${GRALE_ARCH:-a100}" cpu
 set -u
 args=(--config "$GRALE_DATA_CONFIG" --dataset-root "$GRALE_DATASET_ROOT"
       --output-dir "$GRALE_PREPARE_OUTPUT")
+if [[ -n "${GRALE_PATIENT_SPLIT_FILE:-}" ]]; then
+  args+=(--patient-split-file "$GRALE_PATIENT_SPLIT_FILE")
+fi
 if [[ "${GRALE_PREPARE_MODE:-smoke}" == smoke ]]; then
   args+=(--smoke-count 8)
 fi

@@ -129,6 +129,71 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(report["selected_counts"], {"train": 1, "val": 1, "test": 2})
         self.assertTrue(report["smoke"])
 
+    def test_missing_csv_is_recovered_with_exact_original_hash(self):
+        original = self.base / "new_split.csv"
+        original_bytes = original.read_bytes()
+        original.unlink()
+        report = prep.prepare(self.config, self.base / "recovered", reader=self.reader)
+        self.assertEqual(report["patient_split_source"], "patch_index_recovery")
+        self.assertIsNone(report["patient_split_file"])
+        self.assertEqual(report["patient_split_sha256"], hashlib.sha256(original_bytes).hexdigest())
+        self.assertEqual((self.base / "recovered/patient_split.csv").read_bytes(), original_bytes)
+        self.assertFalse(original.exists())
+        self.assertFalse(report["test_graph_content_read"])
+
+    def test_missing_csv_recovery_rejects_changed_assignments_or_hash(self):
+        (self.base / "new_split.csv").unlink()
+        rows = copy.deepcopy(self.rows)
+        for row in rows:
+            if row["patient_id"] == "1":
+                row["split"] = "val"
+        self.write_index(rows)
+        with self.assertRaisesRegex(ValueError, "do not reproduce"):
+            prep.validate_inputs(self.config)
+        self.write_index(self.rows)
+        metadata = json.loads((self.root / "generation_config.json").read_text())
+        metadata["split_sha256"] = "0" * 64
+        (self.root / "generation_config.json").write_text(json.dumps(metadata))
+        with self.assertRaisesRegex(ValueError, "GRALE_PATIENT_SPLIT_FILE"):
+            prep.validate_inputs(self.config)
+
+    def test_recovery_rejects_patient_in_multiple_splits(self):
+        (self.base / "new_split.csv").unlink()
+        rows = copy.deepcopy(self.rows)
+        rows[0]["split"] = "val"
+        self.write_index(rows)
+        with self.assertRaisesRegex(ValueError, "multiple patch-index splits"):
+            prep.validate_inputs(self.config)
+
+    def test_relocated_csv_auto_discovery_and_explicit_override(self):
+        original = self.base / "new_split.csv"
+        relocated = self.root / "saved_split.csv"
+        original.rename(relocated)
+        # A legacy split is present too, but its fingerprint must not be accepted.
+        (self.base / "splits.csv").write_text("patient_id,split\n1,test\n2,val\n3,train\n")
+        inputs = prep.validate_inputs(self.config)
+        self.assertEqual(inputs["split_file"], relocated.resolve())
+        self.assertEqual(inputs["split_source"], "csv")
+        alternate = self.base / "metadata/patient_assignment.csv"
+        alternate.parent.mkdir()
+        relocated.rename(alternate)
+        inputs = prep.validate_inputs(self.config, patient_split_file=alternate)
+        self.assertEqual(inputs["split_file"], alternate.resolve())
+        with self.assertRaisesRegex(FileNotFoundError, "Explicit patient split"):
+            prep.validate_inputs(self.config, patient_split_file=self.base / "typo.csv")
+
+    def test_cli_metadata_preflight_needs_no_output_and_does_not_read_graphs(self):
+        (self.base / "new_split.csv").unlink()
+        config = self.base / "config.json"
+        config.write_text(json.dumps(self.config))
+        result = subprocess.run([sys.executable, str(REPO / "scripts/prepare_vascular_pilot.py"),
+            "--config", str(config), "--check-inputs"], capture_output=True, text=True, check=True)
+        summary = json.loads(result.stdout)
+        self.assertEqual(summary["patient_split_source"], "patch_index_recovery")
+        self.assertEqual(summary["patient_counts"], {"train": 1, "val": 1, "test": 1})
+        self.assertFalse((self.base / "new_split.csv").exists())
+        self.assertFalse((self.root / "patient_split.csv").exists())
+
     def test_rejects_split_mismatch_and_incomplete_generation(self):
         rows = copy.deepcopy(self.rows)
         rows[0]["split"] = "test"

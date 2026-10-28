@@ -47,7 +47,7 @@ The recent GNBM runs use:
 ```
 
 This is the corrected boundary graph dataset, not legacy `patches/` or the
-uncorrected `new_patches/`. The saved patient assignments are in:
+uncorrected `new_patches/`. The generator's default patient-CSV location is:
 
 ```text
 /lustre/fsn1/projects/rech/vnc/upz73jr/datasets/syntheticMRI/new_split.csv
@@ -58,6 +58,31 @@ patients (70/15/15 rounded across 136 patients). Reuse those assignments.
 The old `splits.csv` with 55/14/67 patients is a different benchmark.
 These paths/protocol were recovered from code and documentation, not inspected
 on Lustre from the local Mac. The preparation job verifies them on Jean Zay.
+
+The standalone CSV may not have been copied with the patch directory. If it is
+absent, the script first looks for a nearby split CSV matching the generation
+fingerprint, then recovers the **existing** assignments from `patch_index.csv`.
+Recovery must reproduce the original generator's CSV SHA256 exactly; conflicting
+assignments or a hash mismatch fail before submission. This does not resample
+patients or alter source data. A verified copy is saved as `patient_split.csv`
+inside the preparation output.
+
+For a CSV stored elsewhere, set an explicit override before submission:
+
+```bash
+export GRALE_PATIENT_SPLIT_FILE=/actual/path/to/the/saved/patient_split.csv
+```
+
+You can check metadata and split recovery without submitting a job or reading
+graph/image arrays:
+
+```bash
+python scripts/prepare_vascular_pilot.py --check-inputs \
+  --config "$GRALE_DATA_CONFIG" --dataset-root "$GRALE_DATASET_ROOT"
+```
+
+If using the override, add `--patient-split-file "$GRALE_PATIENT_SPLIT_FILE"`
+to this direct Python command. The Slurm launcher passes it automatically.
 
 `configs/vascular/pilot_data.json` fixes the patch selection:
 
@@ -70,9 +95,9 @@ on Lustre from the local Mac. The preparation job verifies them on Jean Zay.
 
 The patient-generation seed (42 by default) and patch-selection seed (364505)
 serve different purposes; the existing patient split is not regenerated.
-The script checks every patch-index patient assignment against `new_split.csv`,
-the generation metadata's split fingerprint and patch size, and the dataset's
-completion marker. It fails on mismatches instead of falling back to old data.
+The script checks every patch-index patient assignment against the verified
+split, the generation metadata's split fingerprint and patch size, and the
+dataset's completion marker. It fails on mismatches instead of using old data.
 
 ## Commands on the login node
 
@@ -158,6 +183,7 @@ Outputs:
 
 ```text
 resolved_config.json
+patient_split.csv
 manifests/{train,val,test}.csv
 graphs/{train,val}.npz
 graph_statistics.csv

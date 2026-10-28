@@ -10,9 +10,11 @@ else
   export GRALE_PREPARE_OUTPUT="${GRALE_PREPARE_OUTPUT:-$GRALE_PREPARED_DATA}"
 fi
 [[ -x "$GRALE_VENV/bin/python" ]] || { echo "Run setup_environment.sh $GRALE_ARCH first." >&2; exit 2; }
-for required in "$GRALE_DATA_CONFIG" "$GRALE_DATASET_ROOT/patch_index.csv" "$GRALE_DATASET_ROOT/../new_split.csv"; do
-  [[ -f "$required" ]] || { echo "Missing input/environment: $required" >&2; exit 2; }
-done
+args=(--check-inputs --config "$GRALE_DATA_CONFIG" --dataset-root "$GRALE_DATASET_ROOT")
+if [[ -n "${GRALE_PATIENT_SPLIT_FILE:-}" ]]; then
+  args+=(--patient-split-file "$GRALE_PATIENT_SPLIT_FILE")
+fi
+"$GRALE_VENV/bin/python" "$GRALE_REPO_DIR/scripts/prepare_vascular_pilot.py" "${args[@]}"
 if [[ -e "$GRALE_PREPARE_OUTPUT" ]]; then
   echo "Choose a fresh GRALE_PREPARE_OUTPUT; path already exists: $GRALE_PREPARE_OUTPUT" >&2
   exit 2
