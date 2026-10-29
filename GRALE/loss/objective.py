@@ -35,19 +35,19 @@ class GraphAutoencoderObjective():
         
         h_preds = outputs.h
         node_features_preds = outputs.nodes.features
-        node_labels_preds = outputs.nodes.labels
+        node_labels_preds = outputs.nodes.get('labels')
         edge_features_preds = outputs.edges.features
         edge_labels_preds = outputs.edges.labels
         A_preds = outputs.edges.adjacency
         
         h_targets = targets.h.to(h_preds.dtype)
         node_features_targets = targets.nodes.features
-        node_labels_targets = targets.nodes.labels
+        node_labels_targets = targets.nodes.get('labels')
         edge_features_targets = targets.edges.features
         edge_labels_targets = targets.edges.labels
         A_targets = targets.edges.adjacency
         
-        size_targets = h_targets.sum(dim=-1)
+        size_targets = h_targets.sum(dim=-1).clamp_min(1)
         size_max = h_targets.size(-1)
         weight = h_targets 
         batch_size = h_targets.size(0)
@@ -55,7 +55,7 @@ class GraphAutoencoderObjective():
         if permutation_matrices is None:
             loss_h = self.h_objective.forward_aligned(F1 = h_preds, F2 = h_targets)/size_max
             loss_node_features = self.node_features_objective.forward_aligned(F1 = node_features_preds, F2 = node_features_targets, weight = weight)/size_targets
-            loss_node_labels = self.node_labels_objective.forward_aligned(F1 = node_labels_preds, F2 = node_labels_targets, weight = weight)/size_targets
+            loss_node_labels = self.node_labels_objective.forward_aligned(F1 = node_labels_preds, F2 = node_labels_targets, weight = weight)/size_targets if alpha_node_labels else torch.zeros_like(loss_h)
             loss_edge_features = self.edge_features_objective.forward_aligned(C1 = edge_features_preds, C2 = edge_features_targets, weight = weight)/size_targets**2
             loss_edge_labels = self.edge_labels_objective.forward_aligned(C1 = edge_labels_preds, C2 = edge_labels_targets, weight = weight)/size_targets**2
             loss_adjacency = self.adjacency_objective.forward_aligned(C1 = A_preds, C2 = A_targets, weight = weight)/size_targets**2
@@ -63,7 +63,7 @@ class GraphAutoencoderObjective():
         else:
             loss_h = self.h_objective.forward(T = permutation_matrices, F1 = h_preds, F2 = h_targets)/size_max
             loss_node_features = self.node_features_objective.forward(T = permutation_matrices, F1 = node_features_preds, F2 = node_features_targets, weight_2 = weight)/size_targets
-            loss_node_labels = self.node_labels_objective.forward(T = permutation_matrices, F1 = node_labels_preds, F2 = node_labels_targets, weight_2 = weight)/size_targets
+            loss_node_labels = self.node_labels_objective.forward(T = permutation_matrices, F1 = node_labels_preds, F2 = node_labels_targets, weight_2 = weight)/size_targets if alpha_node_labels else torch.zeros_like(loss_h)
             loss_edge_features = self.edge_features_objective.forward(T = permutation_matrices, C1 = edge_features_preds, C2 = edge_features_targets, weight_2 = weight)/size_targets**2
             loss_edge_labels = self.edge_labels_objective.forward(T = permutation_matrices, C1 = edge_labels_preds, C2 = edge_labels_targets, weight_2 = weight)/size_targets**2
             loss_adjacency = self.adjacency_objective.forward(T = permutation_matrices, C1 = A_preds, C2 = A_targets, weight_2 = weight)/size_targets**2
@@ -156,8 +156,3 @@ class GraphAutoencoderMetric():
                }
         
         return edit_graph, log
-    
-    
-
-    
-    

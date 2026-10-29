@@ -1,4 +1,5 @@
 from GRALE.data.dataset import DataModule
+from GRALE.data.geometry import GeometricDataModule
 from GRALE.main import GRALE_model
 import argparse
 import os
@@ -32,6 +33,9 @@ def get_model(config):
 
 def get_data(config, path_h5):
     n_gpus = get_num_gpus()
+    if config.get('node_input') == 'features':
+        return GeometricDataModule(path_h5, config['n_nodes_max'],
+            int(config['batchsize_effective'] / n_gpus), config['n_workers'])
     datamodule = DataModule(
         path_h5=path_h5,
         batch_size=int(config['batchsize_effective']/n_gpus),
@@ -53,7 +57,7 @@ def get_trainer(config, run_name):
     logger = WandbLogger(project="GRALE", 
                          name=run_name,
                          save_dir="logs",
-                         tags=[])
+                         tags=[]) if config.get('wandb', True) else None
     csv_logger = CSVLogger("logs", name=run_name)
 
     # Define checkpoint callback (with no conflict with logger)
@@ -70,8 +74,8 @@ def get_trainer(config, run_name):
     n_gpus = get_num_gpus()
     print(f"Using {n_gpus} GPUs")
     trainer = pl.Trainer(
-        logger=[logger, csv_logger],
-        accelerator="gpu",  # or "auto"
+        logger=[logger, csv_logger] if logger is not None else [csv_logger],
+        accelerator=config.get('accelerator', 'gpu'),
         devices=n_gpus,
         strategy="ddp" if n_gpus > 1 else "auto",
         max_steps=config['n_grad_steps'],
@@ -80,7 +84,8 @@ def get_trainer(config, run_name):
         log_every_n_steps=100,
         reload_dataloaders_every_n_epochs=1,
         callbacks=[checkpoint_cb],
-        precision=config["precision"]
+        precision=config["precision"],
+        max_time=config.get('max_time'),
     )
     return trainer
 

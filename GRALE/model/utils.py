@@ -120,11 +120,28 @@ def build_random_node_pos(batchsize, n_nodes_batch, n_nodes_max):
     return x
 
 
-def build_laplacian_node_pos(A, n_eigvecs):
+def build_laplacian_node_pos(A, n_eigvecs, h=None):
     '''s
     A: torch.Tensor of shape (batchsize, n_nodes_batch, n_nodes_batch)
     '''
+    if h is not None:
+        positions = A.new_zeros(A.shape[0], A.shape[1], n_eigvecs)
+        if n_eigvecs == 0:
+            return positions
+        for b in range(len(A)):
+            ids = torch.where(h[b])[0]
+            if len(ids) < 2:
+                continue
+            adjacency = A[b][ids][:, ids]
+            laplacian = torch.diag(adjacency.sum(-1)) - adjacency
+            values, vectors = torch.linalg.eigh(laplacian)
+            vectors = vectors[:, values > 1e-6][:, :n_eigvecs]
+            if vectors.shape[1]:
+                pivots = vectors.abs().argmax(dim=0)
+                signs = torch.sign(vectors[pivots, torch.arange(vectors.shape[1], device=A.device)])
+                positions[b, ids, :vectors.shape[1]] = vectors * signs
+        return positions
     D = A.sum(dim=-1)
     L = torch.diag_embed(D) - A
     eigvals, eigvecs = torch.linalg.eigh(L.to(A.dtype))
-    return eigvecs[:, :, 1:n_eigvecs+1] 
+    return eigvecs[:, :, 1:n_eigvecs+1]
