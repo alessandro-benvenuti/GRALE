@@ -318,9 +318,15 @@ def main():
     parser.add_argument('--checkpoint-every', type=int, default=0, help='Save a checkpoint every N training steps')
     parser.add_argument('--snapshot-every', type=int, default=0, help='Save three fixed GT/prediction examples every N steps')
     parser.add_argument('--evaluate-only', action='store_true', help='Evaluate an existing checkpoint without training')
+    parser.add_argument('--check-inputs', action='store_true',
+                        help='Freeze and validate the selected targets without creating a model or training')
     args = parser.parse_args()
     if args.resume and args.evaluate_only:
         parser.error('--resume and --evaluate-only are separate operations')
+    if args.check_inputs and (args.resume or args.evaluate_only):
+        parser.error('--check-inputs cannot be combined with checkpoint restoration')
+    if args.steps is not None and args.steps < 1:
+        parser.error('--steps must be positive')
     saved = torch.load(args.resume, map_location='cpu') if args.resume else None
     config = (dict(saved['hyper_parameters']) if saved else
               yaml.safe_load((ROOT / f'GRALE/configs/{args.config}.yaml').read_text()))
@@ -354,6 +360,30 @@ def main():
     else:
         (output / 'config.yaml').write_text(yaml.safe_dump(config, sort_keys=False))
     data = GeometricDataModule(subset, config['n_nodes_max'], config['batchsize_effective'], 0)
+    if args.check_inputs:
+        populations = {}
+        for split, dataset in [('train', data.dataset_train), ('valid', data.dataset_valid)]:
+            for index, row in enumerate(dataset.samples):
+                graph = dataset[index]
+                raw = dataset.load_target(index)
+                if int(graph.h.sum()) != row['nodes'] or not torch.isfinite(graph.nodes.features).all():
+                    raise ValueError(f'Invalid node count or coordinates: {row["sample_id"]}')
+                if tuple(raw['shape_hw']) != (128, 128) or not np.allclose(raw['metric'], np.eye(2) * 128):
+                    raise ValueError('This evaluator requires 128x128 pixel targets')
+            populations[split] = {
+                'graphs': len(dataset),
+                'empty': sum(row['nodes'] == 0 for row in dataset.samples),
+                'max_nodes': max(row['nodes'] for row in dataset.samples),
+                'sample_ids': [row['sample_id'] for row in dataset.samples],
+            }
+        report = {'mode': args.mode, 'config': args.config, 'steps': steps,
+                  'batch_size': data.batch_size, 'matcher_model': config['matcher_model'],
+                  'matcher_cost': config.get('matcher_cost', 'l1'),
+                  'manifest': str(args.manifest.resolve()), 'subset': str(subset.resolve()),
+                  'subset_sha256': digest(subset), 'populations': populations}
+        (output / 'input-check.json').write_text(json.dumps(report, indent=2) + '\n')
+        print(json.dumps(report, indent=2), flush=True)
+        return
     model = (GRALE_model.load_from_checkpoint(str(checkpoint), map_location=device)
              if args.evaluate_only else GRALE_model(config)).to(device)
     if args.resume:

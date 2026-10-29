@@ -2,10 +2,11 @@
 
 Branch: `experiment/vascular-reconstruction-pilot`.
 
-This first step prepares the environment and graph dataset. It does not launch
-autoencoder training. The continuous-coordinate model, loss integration and
-spatial reconstruction evaluator are the next implementation step. Do not send
-the exported NPZ archives to the upstream categorical HDF5 `train.py` loader.
+This directory prepares the environment and 3D MRI graph dataset, and includes
+a separate launcher for the implemented **2D OCTA** graph autoencoder. The MRI
+NPZ export still requires its own adapter; do not send it to the OCTA or
+upstream categorical HDF5 loader. See [the geometric run guide](../../GEOMETRIC_GRAPHS.md#run)
+for the ten-patch, 200,000-step learned-L1 experiment and its SCRATCH environment.
 
 ## Storage and environment
 

@@ -528,3 +528,33 @@ per-arm `snapshots.json`, final `prediction-002000.{png,npz}`, and learned-arm
 `transport-002000.npy`. All three final eight-node prediction plots were
 visually checked against the target; they agree with the scorer and transport
 analysis. Learning curves are saved in each run's `learning-curves.png`.
+
+### Ten-patch learned-L1 run prepared for Jean Zay
+
+The requested next run uses **200,000 optimizer steps**, not epochs, and batch
+size 4. It retains learned L1 Sinkhorn correspondence, the coordinate-only
+64-slot architecture, seed 1234, all existing loss weights and the inherited
+optimizer behavior. It starts fresh with 50 warmup steps and cosine decay over
+200k updates. No fixed-correspondence supervision is used.
+
+`octa_straight_l1_200k.yaml` and
+`cluster/jean_zay/{submit_geometric_tiny.sh,train_geometric_tiny.slurm}` configure
+the existing tiny selection: eight nonempty/two empty OCTA training patches,
+four validation patches, and no test targets. Original source splits and target
+geometry remain unchanged. Batches are 4, 4, 2 per epoch.
+
+The existing setup script's H100 profile creates a module-backed virtual
+environment under `$SCRATCH/venvs/grale-h100-torch231`; the submission and job
+both activate it. Login preflight freezes the subset and validates every
+selected target before GPU submission. Checkpoints and three fixed
+reconstruction snapshots are saved every 10k steps. The training timer is 19h
+inside a 19h30 one-H100 allocation; stopping early is reported explicitly.
+Commands and output locations are in [the run guide](../GEOMETRIC_GRAPHS.md#run).
+This records prepared configuration, not submission or reconstruction results.
+Local verification used a synthetic 14-target fixture: preflight selected 10/4
+graphs with the intended batch size and L1 cost, a four-graph backward pass had
+finite gradients, and a two-update CPU run saved snapshots/checkpoints and
+passed checkpoint reload. The loader produces batches 4/4/2; the configured
+schedule reaches LR 1e-4 at step 50 and zero at step 200,000. Shell syntax and
+diff whitespace checks passed. Actual Jean Zay environment/data checks run in
+the submission wrapper before allocation.

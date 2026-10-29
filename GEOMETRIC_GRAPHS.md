@@ -13,6 +13,56 @@ This implements the initial [experiment plan](EXPERIMENT_PLAN.md): graphs in, gr
 
 ## Run
 
+For the ten-patch, **200,000 optimizer-step, learned L1** experiment on Jean Zay,
+use the dedicated module-backed SCRATCH environment and submission wrapper:
+
+```bash
+cd "$WORK/projects/GRALE"
+# When switching from the A100 environment, deactivate it first.
+deactivate 2>/dev/null || true
+unset GRALE_VENV
+bash cluster/jean_zay/setup_environment.sh h100
+bash cluster/jean_zay/submit_geometric_tiny.sh
+```
+
+Setup creates/reuses `$SCRATCH/venvs/grale-h100-torch231`, inheriting
+`arch/h100` and `pytorch-gpu/py3/2.3.1`. The wrapper activates this environment
+for input checks, and the compute job activates it again before training.
+The default manifest is the prepared OCTA manifest described below. If absent
+beside this checkout, the wrapper checks the same prepared cache under the
+original `/lustre/fswork/projects/rech/vnc/upz25mj/projects/GNBM/` checkout
+recorded by the research audit, and uses it only if readable. If relocated,
+pass its actual path as the wrapper's first argument, or set
+`GRALE_GEOMETRIC_MANIFEST`. The manifest's `data_root` and referenced ZIPs must
+also be accessible. This launcher does not consume the 3D MRI NPZ export.
+
+The [configuration](GRALE/configs/octa_straight_l1_200k.yaml) retains the
+coordinate-only model, learned L1 Sinkhorn cost, loss weights, seed 1234,
+learning rate 1e-4 and 50-step warmup. The cosine schedule spans 200,000 updates.
+The frozen selection has eight nonempty/two empty training graphs and four
+validation graphs; batches contain 4, 4 and 2 training graphs per epoch.
+Original splits are retained and no test targets are read. The inherited
+effective AdamW decay remains 0.01; this run does not change the optimizer.
+
+Before submitting, the wrapper imports/checks the environment and reads all
+14 selected targets on the login node with `--check-inputs`, without creating
+a model or using a GPU. The frozen subset, effective config and input report
+are saved alongside the experiment. No package installation runs in the job.
+One H100 is requested, with a 19-hour training timer and 19h30 allocation.
+The job reports failure if it finishes short of 200,000 updates, retaining
+its checkpoint and metrics for diagnosis or continuation.
+
+Outputs default to a new timestamped directory under
+`$WORK/experiments/grale-octa-tiny-l1-200k/`; override with `GRALE_TINY_OUTPUT`
+before submission if needed. The wrapper prints the output path and saves
+the Slurm ID in `job-id.txt`. Logs go to `$WORK/logs/grale/`. Every 10,000
+updates it saves a checkpoint and three reconstruction examples; complete
+train/validation evaluation and `last.ckpt` are saved at the end. Runtime
+completion does not establish reconstruction quality: inspect `result.json`
+and `train/metrics.json` under `tiny/octa_straight_l1_200k/`.
+
+The earlier short runs can still use the commands below.
+
 From the repository root, with the existing Jean Zay environment:
 
 ```bash
