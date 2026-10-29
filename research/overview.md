@@ -211,3 +211,26 @@ Use GPU reports in `logs/geometric-fit-20261029/tiny/{octa_straight,octa_straigh
 - Whether results transfer to real data, 3D, full graphs or image conditioning. No such transfer is established.
 
 Append future findings here with code/config/data identity and evidence paths; keep large per-run outputs in their run directories. Do not recreate a separate note for each discussion round.
+
+
+### Longer tiny-set overfit, 2026-10-29
+
+Submitted jobs `1694875` (coordinates) and `1694876` (coordinates + Laplacian), each targeting **10,000 steps** on one H100, with no dependency on existing runs. These restart from the same seed rather than continuing the 1,000-step checkpoints: cosine decay now spans 10,000 steps. All other model/loss settings, batch size 4 and warmup 50 stay unchanged. The copied frozen subset is byte-identical: 8 nonempty + 2 empty training graphs, 3 nonempty + 1 empty validation graphs; SHA256 `834a3d36a66c529522121d9612c57dcf57f4da4c5cd1e4a201010775cedbb5cb`.
+
+Aim: determine whether longer optimization can memorize the ten graphs. Apply the existing tiny-fit gate (exact training topology/counts, assigned-node RMSE <=1 px, correct empty outputs); validation is descriptive, not a generalization claim. Each run retains the 30-minute training cap and 40-minute allocation; report the actual completed step count if capped. Previous results are preserved. Records, losses, checkpoints, predictions and overlays: `logs/geometric-overfit-20261029/`, with launch commands in `submission.json`. No new method changes or larger-dataset training are included.
+
+
+### Completed 10,000-step overfits and learning diagnostics
+
+Both variants completed all 10,000 steps and exported predictions/checkpoints (training + export: 1,377 s coordinates, 1,348 s Laplacian). Neither met the tiny-fit gate. These are fresh fits with a 10,000-step schedule, not intermediate checkpoints of the earlier 1,000-step schedule.
+
+| Variant | Nonempty training count accuracy | Training RMSE, 1k → 10k (px) | Predicted training edges / 89 GT | Training node/edge F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Coordinates | 7/8 | 54.26 → 52.87 | 2 / 89 | 0 / 0 |
+| Coordinates + Laplacian | 7/8 | 54.17 → 55.20 | 0 / 89 | 0 / 0 |
+
+Both still decode the two empty training graphs correctly. Validation node/edge F1 are zero; RMSE is 57.34 / 57.31 px. Node-count/existence and graph-centroid learning have not produced useful reconstruction. Median training centroid errors are 0.027 / 0.012 px; median predicted spatial spreads are only 1.81% / 0.40% of GT, where spread means RMS distance from each graph's own centroid. The coordinate-only eight-node example splits into two clusters and is an exception to single-centroid collapse, but still has no correctly localized nodes or edges under the 2-pixel matching rule.
+
+Batch-size-weighted means over the first/last 300 training updates show total loss 0.473 → 0.154 / 0.463 → 0.161, existence loss 0.300 → 0.0115 / 0.298 → 0.0112. Most changes occur early, with long plateaus; the coordinate-only fit makes a late partial change around 8k updates. A falling total loss is therefore insufficient evidence of node/edge reconstruction. No root cause has been established and no model/loss settings were changed.
+
+Artifacts: `logs/geometric-overfit-20261029/comparison/{learning_curves.png,gt_predictions.png,learning_diagnostics.json}`. `inspect_learning.py` reproduces the collapse on the saved 40-node training graph with an explicit spread assertion; it intentionally exits with failure on these outputs. This is an artifact-level diagnostic, not a new test suite. Next useful diagnosis is to inspect matching and per-node supervision before increasing the budget again.

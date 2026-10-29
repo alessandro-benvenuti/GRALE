@@ -106,13 +106,26 @@ def prepare_subset(source, destination, mode, seed):
 
 
 class RuntimeCheck(pl.Callback):
-    def __init__(self):
+    def __init__(self, resume=False):
+        self.resume = resume
         self.backward_steps = 0
         self.started = None
         self.batch_seconds = []
+        self.start_step = 0
+        self.start_lr = None
 
     def on_train_start(self, trainer, model):
         self.started = time.time()
+        self.start_step = trainer.global_step
+        if self.resume:
+            # The old cosine schedule may have ended at zero. Use the extended
+            # schedule immediately, including for the first resumed update.
+            scheduler = trainer.lr_scheduler_configs[0].scheduler
+            for group, base_lr, factor in zip(trainer.optimizers[0].param_groups,
+                                             scheduler.base_lrs, scheduler.lr_lambdas):
+                group['lr'] = base_lr * factor(trainer.global_step)
+        self.start_lr = trainer.optimizers[0].param_groups[0]['lr']
+        print(f'Training from step {self.start_step}, learning rate {self.start_lr:.8g}', flush=True)
 
     def on_after_backward(self, trainer, model):
         gradients = [p.grad for p in model.parameters() if p.grad is not None]
@@ -129,6 +142,54 @@ class RuntimeCheck(pl.Callback):
         if model.device.type == 'cuda':
             torch.cuda.synchronize()
         self.batch_seconds.append(time.time() - self.batch_started)
+        model.log('learning_rate', trainer.optimizers[0].param_groups[0]['lr'],
+                  on_step=True, on_epoch=False)
+
+
+class ReconstructionSnapshots(pl.Callback):
+    def __init__(self, output, data, every):
+        self.output = output / 'intermediate'
+        self.every = every
+        train = data.dataset_train
+        valid = data.dataset_valid
+        first_train = next(i for i, row in enumerate(train.samples) if row['nodes'])
+        dense_train = max(range(len(train)), key=lambda i: train.samples[i]['nodes'])
+        first_valid = next(i for i, row in enumerate(valid.samples) if row['nodes'])
+        self.examples = [('train', train, first_train), ('train', train, dense_train),
+                         ('valid', valid, first_valid)]
+
+    def save(self, model, step):
+        output = self.output / f'step-{step:06d}'
+        output.mkdir(parents=True, exist_ok=True)
+        was_training = model.training
+        model.eval()
+        records = []
+        with torch.no_grad():
+            for split, dataset, index in self.examples:
+                sample = dataset.samples[index]
+                graph = dataset[index]
+                batch = custom_collate_fn([graph]).to(model.device)
+                decoded = model.decode(model.encode(batch.clone()))
+                prediction = decode_graph(decoded[0])
+                target = decode_graph(graph)
+                raw = dataset.load_target(index)
+                guides = [raw['full_paths'][a:b] for a, b in
+                          zip(raw['path_offsets'][:-1], raw['path_offsets'][1:])]
+                name = f'{split}-{sample["sample_id"]}'
+                overlay(output / f'{name}.png', sample, target, prediction, guides)
+                np.savez_compressed(output / f'{name}.npz', **prediction, metric=raw['metric'])
+                records.append({'split': split, 'sample_id': sample['sample_id'],
+                                **score_graph(prediction, target, raw['metric'])})
+        model.train(was_training)
+        (output / 'metrics.json').write_text(json.dumps(records, indent=2) + '\n')
+        print(f'Saved three reconstruction snapshots at step {step}: {output}', flush=True)
+
+    def on_train_start(self, trainer, model):
+        self.save(model, trainer.global_step)
+
+    def on_train_batch_end(self, trainer, model, outputs, batch, batch_idx):
+        if trainer.global_step % self.every == 0:
+            self.save(model, trainer.global_step)
 
 
 def sanity(model, data, device):
@@ -177,6 +238,9 @@ def sanity(model, data, device):
 
 def overlay(path, sample, target, prediction, guides):
     fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    points = np.concatenate([target['nodes'], prediction['nodes']]) * 128
+    low = np.minimum(points.min(axis=0), 0) if len(points) else np.zeros(2)
+    high = np.maximum(points.max(axis=0), 128) if len(points) else np.full(2, 128)
     for ax, graph, title in zip(axes, [target, prediction], ['Target chords', 'Decoded chords']):
         image = Path(sample['image'])
         if image.exists():
@@ -188,8 +252,10 @@ def overlay(path, sample, target, prediction, guides):
             xy = graph['nodes'][edge] * 128
             ax.plot(xy[:, 0], xy[:, 1], color='cyan', linewidth=1)
         ax.scatter(graph['nodes'][:, 0] * 128, graph['nodes'][:, 1] * 128, s=8, color='red')
-        ax.set(xlim=(0, 128), ylim=(128, 0), title=title)
-    fig.tight_layout()
+        ax.set(xlim=(low[0] - 2, high[0] + 2), ylim=(high[1] + 2, low[1] - 2), aspect='equal',
+               title=f'{title}: {len(graph["nodes"])} nodes, {len(graph["edges"])} edges')
+    fig.text(.5, .015, 'Yellow: GT guide | Cyan: graph edges | Red: graph nodes', ha='center', fontsize=9)
+    fig.tight_layout(rect=[0, .05, 1, 1])
     fig.savefig(path, dpi=120)
     plt.close(fig)
 
@@ -246,10 +312,18 @@ def main():
     parser.add_argument('--manifest', type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument('--output', type=Path, default=Path('logs/geometric'))
     parser.add_argument('--device', choices=['cpu', 'cuda', 'auto'], default='auto')
-    parser.add_argument('--steps', type=int)
+    parser.add_argument('--steps', type=int, help='Total optimizer steps, including steps in --resume')
+    parser.add_argument('--resume', type=Path, help='Restore model and optimizer from this checkpoint')
+    parser.add_argument('--max-time', default='00:00:30:00', help='Training time cap, DD:HH:MM:SS')
+    parser.add_argument('--checkpoint-every', type=int, default=0, help='Save a checkpoint every N training steps')
+    parser.add_argument('--snapshot-every', type=int, default=0, help='Save three fixed GT/prediction examples every N steps')
     parser.add_argument('--evaluate-only', action='store_true', help='Evaluate an existing checkpoint without training')
     args = parser.parse_args()
-    config = yaml.safe_load((ROOT / f'GRALE/configs/{args.config}.yaml').read_text())
+    if args.resume and args.evaluate_only:
+        parser.error('--resume and --evaluate-only are separate operations')
+    saved = torch.load(args.resume, map_location='cpu') if args.resume else None
+    config = (dict(saved['hyper_parameters']) if saved else
+              yaml.safe_load((ROOT / f'GRALE/configs/{args.config}.yaml').read_text()))
     seed = config['seed']
     pl.seed_everything(seed, workers=True)
     torch.set_num_threads(1)
@@ -261,11 +335,16 @@ def main():
     if checkpoint.exists() and not args.evaluate_only:
         raise ValueError('Run already exists; select a new --output rather than overwrite evidence')
     steps = args.steps or {'smoke': 2, 'tiny': 1000, 'pilot': 2000}[args.mode]
+    start_step = saved['global_step'] if saved else 0
+    if args.resume and steps <= start_step:
+        parser.error('--steps must exceed the resumed checkpoint step')
     config['n_grad_steps'] = steps
-    config['n_warmup_steps'] = 0 if args.mode == 'smoke' else min(50, steps // 10)
+    config['max_time'] = args.max_time
+    if not args.resume:
+        config['n_warmup_steps'] = 0 if args.mode == 'smoke' else min(50, steps // 10)
     device = 'cuda' if args.device == 'auto' and torch.cuda.is_available() else args.device
     device = 'cpu' if device == 'auto' else device
-    if device == 'cpu':
+    if device == 'cpu' and not args.resume:
         config['batchsize_effective'] = min(config['batchsize_effective'], 2)
     if args.evaluate_only:
         saved = torch.load(checkpoint, map_location='cpu')
@@ -277,19 +356,29 @@ def main():
     data = GeometricDataModule(subset, config['n_nodes_max'], config['batchsize_effective'], 0)
     model = (GRALE_model.load_from_checkpoint(str(checkpoint), map_location=device)
              if args.evaluate_only else GRALE_model(config)).to(device)
+    if args.resume:
+        model.load_state_dict(saved['state_dict'])
+        del saved
     initial = None if args.evaluate_only else {name: value.detach().cpu().clone() for name, value in model.named_parameters()}
     checks = None if args.evaluate_only else sanity(model, data, device)
-    callback = RuntimeCheck()
+    callback = RuntimeCheck(resume=bool(args.resume))
+    callbacks = [callback]
+    if args.snapshot_every:
+        callbacks.append(ReconstructionSnapshots(output, data, args.snapshot_every))
+    if args.checkpoint_every:
+        callbacks.append(pl.callbacks.ModelCheckpoint(dirpath=output / 'checkpoints',
+            filename='step-{step:06d}', auto_insert_metric_name=False, save_top_k=-1,
+            every_n_train_steps=args.checkpoint_every, save_on_train_epoch_end=False))
     if device == 'cuda':
         torch.cuda.reset_peak_memory_stats()
     trainer = pl.Trainer(accelerator='gpu' if device == 'cuda' else 'cpu', devices=1,
-        max_steps=steps, max_time='00:00:30:00', callbacks=[callback],
-        logger=CSVLogger(str(output), name='csv'), enable_checkpointing=False,
+        max_steps=steps, max_time=args.max_time, callbacks=callbacks,
+        logger=CSVLogger(str(output), name='csv'), enable_checkpointing=bool(args.checkpoint_every),
         enable_progress_bar=False, enable_model_summary=False,
         gradient_clip_val=config['max_grad_norm'], precision='32-true',
         log_every_n_steps=1, num_sanity_val_steps=0)
     if not args.evaluate_only:
-        trainer.fit(model, datamodule=data)
+        trainer.fit(model, datamodule=data, ckpt_path=args.resume)
     else:
         callback.started = time.time()
     trainer.validate(model, datamodule=data, verbose=False)
@@ -318,6 +407,11 @@ def main():
                  and nonempty['coordinate_rmse_px'] <= 1 and empty.get('exact') == 1)
     state = {'mode': args.mode, 'config': args.config, 'sanity': checks,
              'steps': steps if args.evaluate_only else trainer.global_step,
+             'starting_step': start_step,
+             'additional_steps': None if args.evaluate_only else trainer.global_step - start_step,
+             'resume_from': str(args.resume.resolve()) if args.resume else None,
+             'resume_sha256': digest(args.resume) if args.resume else None,
+             'starting_learning_rate': callback.start_lr,
              'evaluation_only': args.evaluate_only,
              'finite_backward_steps': None if args.evaluate_only else callback.backward_steps,
              'changed_parameter_tensors': changed, 'checkpoint_roundtrip': True,
