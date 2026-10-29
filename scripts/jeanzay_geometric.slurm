@@ -24,4 +24,4 @@ export PYTHONDONTWRITEBYTECODE=1 WANDB_MODE=offline
 mkdir -p "$MPLCONFIGDIR"
 
 srun python -u scripts/run_geometric.py --mode tiny --steps 1000 --device cuda \
-    --config "${1:-octa_straight}" --output logs/geometric-fit-20261029
+    --config "${1:-octa_straight}" --output logs/geometric-fit-20261029 "${@:2}"

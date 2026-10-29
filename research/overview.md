@@ -175,18 +175,35 @@ Artifacts: `logs/geometric/{smoke,tiny}/`, frozen manifests `logs/geometric/subs
 
 ### Submitted tiny fits, 2026-10-29
 
-| Variant | Slurm job | Dependency |
+| Variant | Training job | Outcome |
 | --- | --- | --- |
-| Coordinates only | `1690370` | After existing GPU job `1673566` finishes |
-| Coordinates + Laplacian | `1690371` | After existing GPU job `1673580` finishes |
+| Coordinates only | `1690370` | 1,000 steps and checkpoint saved; postprocessing failed |
+| Coordinates + Laplacian | `1690371` | 1,000 steps and checkpoint saved; postprocessing failed |
 
-Both request one H100, 1,000 optimizer steps, batch size 4, 50 warmup steps, and the same frozen 8-nonempty/2-empty training graphs with 4 validation graphs. Training is capped at 30 minutes per variant, within a 40-minute allocation. The jobs occupy the two existing GPU lanes sequentially, preserving the two-GPU limit. These are diagnostic fits, far below the paper's 300k/700k/1.5M steps, not paper-budget reproductions. No held-out pilot is automatically launched.
+Both request one H100, 1,000 optimizer steps, batch size 4, 50 warmup steps, and the same frozen 8-nonempty/2-empty training graphs with 4 validation graphs. Training is capped at 30 minutes per variant, within a 40-minute allocation. The user clarified that these two jobs may overlap the two current GPU runs; the inherited two-GPU scheduling cap does not apply to this overlap. These are diagnostic fits, far below the paper's 300k/700k/1.5M steps, not paper-budget reproductions. No held-out pilot is automatically launched.
 
-Launcher: [jeanzay_geometric.slurm](../scripts/jeanzay_geometric.slurm). Submission record, scheduler logs, checkpoints and eventual metrics: `logs/geometric-fit-20261029/`. At submission both jobs were dependency-queued; no learning result is claimed yet.
+Launcher: [jeanzay_geometric.slurm](../scripts/jeanzay_geometric.slurm). Submission record, scheduler logs, checkpoints and metrics: `logs/geometric-fit-20261029/`. Both initially had dependency holds, subsequently removed at user request.
+
+### Recovered 1,000-step results, 2026-10-29
+
+Both training jobs failed **after training** in the checkpoint round-trip check: Lightning validation teardown moved the model to CPU, while the runner supplied a CUDA batch. The runner now restores the requested device before comparison/export. Its new `--evaluate-only` mode preserves saved checkpoints and performs no optimizer steps.
+
+Evaluation-only GPU jobs `1694052` and `1694053` both completed with exit 0 in 32 seconds. GPU validation, checkpoint comparison, predictions and metric export passed; checkpoint hashes match the separately recovered CPU copies. No retraining or held-out pilot was performed.
+
+| Variant | Nonempty split | Correct node count | Node F1 (2 px) | Edge F1 | Assigned-node RMSE (px) | Exact recovery |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Coordinates | Train, 8 graphs | 87.5% | 0 | 0 | 54.26 | 0 |
+| Coordinates | Validation, 3 graphs | 33.3% | 0.0095 | 0 | 56.16 | 0 |
+| Coordinates + Laplacian | Train, 8 graphs | 100% | 0 | 0 | 54.17 | 0 |
+| Coordinates + Laplacian | Validation, 3 graphs | 66.7% | 0 | 0 | 56.25 | 0 |
+
+Both correctly decoded the 2 training and 1 validation empty graphs. **Neither passed the tiny-fit quality gate.** Node-count learning has not translated into accurate placement or connectivity; these results do not establish generalization or a spline-ready representation. No automatic larger training was started.
+
+Use GPU reports in `logs/geometric-fit-20261029/tiny/{octa_straight,octa_straight_laplacian}/{train,valid}/metrics.json` and adjacent overlays. Preliminary CPU recovery is kept separately under `cpu-recovery/`. PE metrics differ between CPU and GPU because eigenspace representations need not agree across solvers; the table uses evaluation on the training device. No cross-device prediction equivalence is claimed.
 
 ## Open hypotheses
 
-- Whether useful reconstruction/generalization emerges beyond the short runtime checks; the current all-empty output is not a success result.
+- Whether useful geometric reconstruction emerges beyond these first 1,000-step fits; node counts improved, but placement/connectivity remain poor and the tiny-fit gate failed.
 - Whether active-graph Laplacian features help coordinates, and whether repeated-eigenspace ambiguity matters.
 - Whether shortest-path supervision helps connectivity or competes with localization; retain it initially before ablation.
 - Whether latent size, loss weights, matching or optimization budget limit learning. A single small configuration cannot settle model-family suitability.

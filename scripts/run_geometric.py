@@ -247,6 +247,7 @@ def main():
     parser.add_argument('--output', type=Path, default=Path('logs/geometric'))
     parser.add_argument('--device', choices=['cpu', 'cuda', 'auto'], default='auto')
     parser.add_argument('--steps', type=int)
+    parser.add_argument('--evaluate-only', action='store_true', help='Evaluate an existing checkpoint without training')
     args = parser.parse_args()
     config = yaml.safe_load((ROOT / f'GRALE/configs/{args.config}.yaml').read_text())
     seed = config['seed']
@@ -256,7 +257,8 @@ def main():
     identity = prepare_subset(args.manifest, subset, args.mode, seed)
     output = args.output / args.mode / args.config
     output.mkdir(parents=True, exist_ok=True)
-    if (output / 'last.ckpt').exists():
+    checkpoint = output / 'last.ckpt'
+    if checkpoint.exists() and not args.evaluate_only:
         raise ValueError('Run already exists; select a new --output rather than overwrite evidence')
     steps = args.steps or {'smoke': 2, 'tiny': 1000, 'pilot': 2000}[args.mode]
     config['n_grad_steps'] = steps
@@ -265,11 +267,18 @@ def main():
     device = 'cpu' if device == 'auto' else device
     if device == 'cpu':
         config['batchsize_effective'] = min(config['batchsize_effective'], 2)
-    (output / 'config.yaml').write_text(yaml.safe_dump(config, sort_keys=False))
+    if args.evaluate_only:
+        saved = torch.load(checkpoint, map_location='cpu')
+        config = saved['hyper_parameters']
+        steps = saved['global_step']
+        del saved
+    else:
+        (output / 'config.yaml').write_text(yaml.safe_dump(config, sort_keys=False))
     data = GeometricDataModule(subset, config['n_nodes_max'], config['batchsize_effective'], 0)
-    model = GRALE_model(config).to(device)
-    initial = {name: value.detach().cpu().clone() for name, value in model.named_parameters()}
-    checks = sanity(model, data, device)
+    model = (GRALE_model.load_from_checkpoint(str(checkpoint), map_location=device)
+             if args.evaluate_only else GRALE_model(config)).to(device)
+    initial = None if args.evaluate_only else {name: value.detach().cpu().clone() for name, value in model.named_parameters()}
+    checks = None if args.evaluate_only else sanity(model, data, device)
     callback = RuntimeCheck()
     if device == 'cuda':
         torch.cuda.reset_peak_memory_stats()
@@ -279,13 +288,20 @@ def main():
         enable_progress_bar=False, enable_model_summary=False,
         gradient_clip_val=config['max_grad_norm'], precision='32-true',
         log_every_n_steps=1, num_sanity_val_steps=0)
-    trainer.fit(model, datamodule=data)
+    if not args.evaluate_only:
+        trainer.fit(model, datamodule=data)
+    else:
+        callback.started = time.time()
     trainer.validate(model, datamodule=data, verbose=False)
-    assert callback.backward_steps > 0
-    changed = sum(not torch.equal(initial[name], value.detach().cpu()) for name, value in model.named_parameters())
-    assert changed > 0
-    trainer.save_checkpoint(str(output / 'last.ckpt'))
-    restored = GRALE_model.load_from_checkpoint(str(output / 'last.ckpt'), map_location=device).to(device)
+    changed = None
+    if not args.evaluate_only:
+        assert callback.backward_steps > 0
+        changed = sum(not torch.equal(initial[name], value.detach().cpu()) for name, value in model.named_parameters())
+        assert changed > 0
+        trainer.save_checkpoint(str(checkpoint))
+    # Lightning's validation teardown moves the model to CPU, including after GPU training.
+    model.to(device)
+    restored = GRALE_model.load_from_checkpoint(str(checkpoint), map_location=device).to(device)
     restored.eval()
     model.eval()
     batch = next(iter(data.train_dataloader())).to(device)
@@ -301,16 +317,20 @@ def main():
                  and nonempty.get('coordinate_rmse_px') is not None
                  and nonempty['coordinate_rmse_px'] <= 1 and empty.get('exact') == 1)
     state = {'mode': args.mode, 'config': args.config, 'sanity': checks,
-             'steps': trainer.global_step, 'finite_backward_steps': callback.backward_steps,
+             'steps': steps if args.evaluate_only else trainer.global_step,
+             'evaluation_only': args.evaluate_only,
+             'finite_backward_steps': None if args.evaluate_only else callback.backward_steps,
              'changed_parameter_tensors': changed, 'checkpoint_roundtrip': True,
              'runtime_passed': True,
              'tiny_fit_gate': tiny_gate if args.mode == 'tiny' else None,
              'interpretation': ('tiny fit gate passed' if tiny_gate else
-                 'short runtime check; reconstruction quality not established') if args.mode != 'pilot' else
-                 'held-out pilot; assess provisional gates in EXPERIMENT_PLAN.md',
+                 'tiny fit gate not met; see checkpoint step count and metrics') if args.mode == 'tiny' else
+                 ('smoke runtime check only' if args.mode == 'smoke' else
+                  'held-out pilot; assess provisional gates in EXPERIMENT_PLAN.md'),
              'parameters': sum(p.numel() for p in model.parameters()),
              'seconds': time.time() - callback.started,
-             'seconds_per_step': float(np.mean(callback.batch_seconds)),
+             'seconds_per_step': float(np.mean(callback.batch_seconds)) if callback.batch_seconds else None,
+             'checkpoint_sha256': digest(checkpoint),
              'peak_gpu_bytes': torch.cuda.max_memory_allocated() if device == 'cuda' else None,
              'device': device, 'python': sys.version, 'torch': torch.__version__, 'lightning': pl.__version__,
              'code_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),

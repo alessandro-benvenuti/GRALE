@@ -43,6 +43,14 @@ Subsets are frozen under `logs/geometric/subsets/`, shared by both positional va
 
 Use `--output logs/another-run` for a new experiment. The runner refuses to overwrite a completed checkpoint or silently reuse a subset whose source/archive identity changed.
 
+To recover evaluation/export from an already trained checkpoint without retraining, use the same mode, configuration and output root with `--evaluate-only`, for example:
+
+```bash
+python scripts/run_geometric.py --mode tiny --config octa_straight --output logs/geometric-fit-20261029 --device cuda --evaluate-only
+```
+
+This preserves the checkpoint and original training config. Recovery results mark `evaluation_only=true`; unavailable training timings/gradient counts are not reconstructed. After Lightning validation, the runner explicitly restores the requested device before checkpoint comparison and inference.
+
 The original `train.py` also accepts these configurations and a prepared or frozen geometric manifest as `--dataset_path`. For the planned bounded comparison, prefer the runner because it saves the subsets, predictions, baselines and evaluation artifacts together.
 
 ## Outputs and interpretation
