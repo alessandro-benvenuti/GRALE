@@ -40,12 +40,15 @@ def digest(path):
 
 
 def select_rows(rows, count, seed, empty_count=None):
+    if count > len(rows):
+        raise ValueError(f'Requested {count} graphs but only {len(rows)} eligible patches are available')
     rng = random.Random(seed)
     empty = [row for row in rows if row['nodes'] == 0]
     nonempty = [row for row in rows if row['nodes'] > 0]
     empty_count = round(count * len(empty) / len(rows)) if empty_count is None else empty_count
     if empty_count > len(empty) or count - empty_count > len(nonempty):
-        raise ValueError('Not enough graphs for the requested subset')
+        raise ValueError(f'Need {empty_count} empty and {count - empty_count} nonempty patches; '
+                         f'only {len(empty)} empty and {len(nonempty)} nonempty are eligible')
     rng.shuffle(empty)
     groups = defaultdict(list)
     for row in nonempty:
@@ -63,12 +66,13 @@ def select_rows(rows, count, seed, empty_count=None):
     return chosen
 
 
-def prepare_subset(source, destination, mode, seed):
+def prepare_subset(source, destination, mode, seed, max_nodes=None):
     source = Path(source).resolve()
     identity = digest(source)
     if destination.exists():
         saved = json.loads(destination.read_text())
-        if saved['source_sha256'] != identity or saved['mode'] != mode or saved['seed'] != seed:
+        if (saved['source_sha256'] != identity or saved['mode'] != mode
+                or saved['seed'] != seed or saved.get('max_nodes') != max_nodes):
             raise ValueError('Frozen subset differs; use a new output directory')
         for name, expected in saved['archives_sha256'].items():
             if digest(Path(saved['data_root']) / name) != expected:
@@ -79,6 +83,11 @@ def prepare_subset(source, destination, mode, seed):
     valid = [row for row in original['samples'] if row['split'] == 'validation']
     if {row['subject_id'] for row in train} & {row['subject_id'] for row in valid}:
         raise ValueError('Training and validation source identities overlap')
+    source_counts = {'train': len(train), 'validation': len(valid)}
+    if max_nodes is not None:
+        train = [row for row in train if row['nodes'] <= max_nodes]
+        valid = [row for row in valid if row['nodes'] <= max_nodes]
+    eligible_counts = {'train': len(train), 'validation': len(valid)}
     sizes = {'smoke': (8, 4), 'tiny': (10, 4), 'pilot': (256, 128)}
     n_train, n_valid = sizes[mode]
     selected = select_rows(train, n_train, seed, 2 if mode in ('smoke', 'tiny') else None)
@@ -96,6 +105,8 @@ def prepare_subset(source, destination, mode, seed):
     archives = {row['target_archive'] for row in selected}
     saved = {'data_root': str(root), 'source_manifest': str(source),
              'source_sha256': identity, 'mode': mode, 'seed': seed,
+             'max_nodes': max_nodes, 'source_split_counts': source_counts,
+             'eligible_split_counts': eligible_counts,
              'annotation': 'supplied XY graph, contracted branches rendered as straight chords',
              'normalization': 'XY/[W,H]; pixel metric retained; no augmentation',
              'archives_sha256': {name: digest(root / name) for name in archives},
@@ -310,6 +321,8 @@ def main():
     parser.add_argument('--mode', choices=['smoke', 'tiny', 'pilot'], default='smoke')
     parser.add_argument('--config', default='octa_straight')
     parser.add_argument('--manifest', type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument('--max-nodes', type=int,
+                        help='Select patches with at most this many nodes; never truncate targets')
     parser.add_argument('--output', type=Path, default=Path('logs/geometric'))
     parser.add_argument('--device', choices=['cpu', 'cuda', 'auto'], default='auto')
     parser.add_argument('--steps', type=int, help='Total optimizer steps, including steps in --resume')
@@ -330,11 +343,15 @@ def main():
     saved = torch.load(args.resume, map_location='cpu') if args.resume else None
     config = (dict(saved['hyper_parameters']) if saved else
               yaml.safe_load((ROOT / f'GRALE/configs/{args.config}.yaml').read_text()))
+    max_nodes = args.max_nodes if args.max_nodes is not None else config.get('selection_max_nodes')
+    if max_nodes is not None and not 1 <= max_nodes <= config['n_nodes_max']:
+        parser.error('--max-nodes must be positive and fit the model node capacity')
+    config['selection_max_nodes'] = max_nodes
     seed = config['seed']
     pl.seed_everything(seed, workers=True)
     torch.set_num_threads(1)
     subset = args.output / 'subsets' / f'{args.mode}-{seed}.json'
-    identity = prepare_subset(args.manifest, subset, args.mode, seed)
+    identity = prepare_subset(args.manifest, subset, args.mode, seed, max_nodes=max_nodes)
     output = args.output / args.mode / args.config
     output.mkdir(parents=True, exist_ok=True)
     checkpoint = output / 'last.ckpt'
@@ -368,6 +385,8 @@ def main():
                 raw = dataset.load_target(index)
                 if int(graph.h.sum()) != row['nodes'] or not torch.isfinite(graph.nodes.features).all():
                     raise ValueError(f'Invalid node count or coordinates: {row["sample_id"]}')
+                if max_nodes is not None and int(graph.h.sum()) > max_nodes:
+                    raise ValueError(f'Graph exceeds the patch-selection limit: {row["sample_id"]}')
                 if tuple(raw['shape_hw']) != (128, 128) or not np.allclose(raw['metric'], np.eye(2) * 128):
                     raise ValueError('This evaluator requires 128x128 pixel targets')
             populations[split] = {
@@ -379,6 +398,9 @@ def main():
         report = {'mode': args.mode, 'config': args.config, 'steps': steps,
                   'batch_size': data.batch_size, 'matcher_model': config['matcher_model'],
                   'matcher_cost': config.get('matcher_cost', 'l1'),
+                  'selection_max_nodes': max_nodes,
+                  'source_split_counts': identity.get('source_split_counts'),
+                  'eligible_split_counts': identity.get('eligible_split_counts'),
                   'manifest': str(args.manifest.resolve()), 'subset': str(subset.resolve()),
                   'subset_sha256': digest(subset), 'populations': populations}
         (output / 'input-check.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -462,6 +484,7 @@ def main():
              'code_sha256': {str(path.relative_to(ROOT)): digest(path) for path in
                              [*sorted((ROOT / 'GRALE').rglob('*.py')), Path(__file__).resolve()]},
              'subset': str(subset.resolve()), 'subset_sha256': digest(subset),
+             'selection_max_nodes': max_nodes,
              'source_sha256': identity['source_sha256'], 'reports': reports,
              'prototype_sample_id': data.dataset_train.samples[prototype_id]['sample_id']}
     (output / 'result.json').write_text(json.dumps(state, indent=2, allow_nan=False) + '\n')

@@ -558,3 +558,34 @@ passed checkpoint reload. The loader produces batches 4/4/2; the configured
 schedule reaches LR 1e-4 at step 50 and zero at step 200,000. Shell syntax and
 diff whitespace checks passed. Actual Jean Zay environment/data checks run in
 the submission wrapper before allocation.
+
+### Patch-size restriction and recovered scripts
+
+The user supplied `scripts.zip` and confirmed the source dataset root as
+`/lustre/fsn1/projects/rech/vnc/upz25mj/datasets`. The recovered runner matches
+the earlier implementation before the new input-check option. Its additional
+`jeanzay_geometric_200k.slurm` resumes the existing 30k checkpoints and runs both
+coordinate-only and Laplacian variants as an array; it has no node-count filter
+and does not activate the SCRATCH venv. It was inspected as source material,
+not executed or copied over the current launcher.
+
+The requested fresh learned-L1 run now samples only patches with **at most 20
+nodes**, independently within the original train/validation splits. Filtering
+precedes the seeded 10/4 selection; complete graphs are retained and no node
+truncation occurs. Empty counts remain two training and one validation graph.
+The 64-slot architecture and all other training settings stay the same.
+The frozen subset records the cutoff and source/eligible counts; a different
+cutoff cannot silently reuse it. Outputs now use
+`$WORK/experiments/grale-octa-tiny-l1-max20-200k/`.
+
+The supplied dataset root contains source data and does not replace the
+prepared OCTA manifest. The launcher checks the recorded preparation paths,
+including the original GNBM checkout, and verifies the selected NPZ targets
+before allocation. A relocated manifest can still be passed explicitly.
+Local checks used a fixture containing 20-, 21- and 40-node graphs in both
+splits: exactly 20 remained eligible, larger graphs were excluded, selected
+target rows were unchanged, subset reuse was deterministic, and a changed
+cutoff was rejected. Insufficient eligible populations fail before training;
+a reserved test entry pointing to a nonexistent archive was not opened. The
+two-update CPU run also passed finite backward, snapshots and checkpoint reload
+with the filtered cohort. These checks do not audit remote dataset contents.

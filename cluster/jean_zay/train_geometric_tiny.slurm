@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Submit through submit_geometric_tiny.sh, which freezes and checks the targets.
-#SBATCH --job-name=grale-octa-l1-200k
+#SBATCH --job-name=grale-octa-l1-n20
 #SBATCH --account=vnc@h100
 #SBATCH --partition=gpu_p6
 #SBATCH --constraint=h100
@@ -23,6 +23,7 @@ python cluster/jean_zay/check_environment.py --gpu \
 srun "$GRALE_VENV/bin/python" -u scripts/run_geometric.py \
   --mode tiny --config octa_straight_l1_200k --device cuda \
   --steps 200000 --max-time 00:19:00:00 \
+  --max-nodes 20 \
   --manifest "$GRALE_GEOMETRIC_MANIFEST" --output "$GRALE_TINY_OUTPUT" \
   --checkpoint-every 10000 --snapshot-every 10000
 python - "$GRALE_TINY_OUTPUT/tiny/octa_straight_l1_200k/result.json" <<'PY'

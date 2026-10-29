@@ -13,7 +13,8 @@ This implements the initial [experiment plan](EXPERIMENT_PLAN.md): graphs in, gr
 
 ## Run
 
-For the ten-patch, **200,000 optimizer-step, learned L1** experiment on Jean Zay,
+For the ten-patch, **at most 20 nodes per patch, 200,000 optimizer-step,
+learned L1** experiment on Jean Zay,
 use the dedicated module-backed SCRATCH environment and submission wrapper:
 
 ```bash
@@ -28,8 +29,12 @@ bash cluster/jean_zay/submit_geometric_tiny.sh
 Setup creates/reuses `$SCRATCH/venvs/grale-h100-torch231`, inheriting
 `arch/h100` and `pytorch-gpu/py3/2.3.1`. The wrapper activates this environment
 for input checks, and the compute job activates it again before training.
-The default manifest is the prepared OCTA manifest described below. If absent
-beside this checkout, the wrapper checks the same prepared cache under the
+The source dataset root is
+`/lustre/fsn1/projects/rech/vnc/upz25mj/datasets` (override with
+`GRALE_GEOMETRIC_DATASET_ROOT`). This directory contains source datasets; the
+loader needs the prepared OCTA NPZ/ZIP manifest described below. The wrapper
+checks that preparation layout under the dataset root and the sibling GNBM
+checkout, then the same prepared cache under the
 original `/lustre/fswork/projects/rech/vnc/upz25mj/projects/GNBM/` checkout
 recorded by the research audit, and uses it only if readable. If relocated,
 pass its actual path as the wrapper's first argument, or set
@@ -39,6 +44,11 @@ also be accessible. This launcher does not consume the 3D MRI NPZ export.
 The [configuration](GRALE/configs/octa_straight_l1_200k.yaml) retains the
 coordinate-only model, learned L1 Sinkhorn cost, loss weights, seed 1234,
 learning rate 1e-4 and 50-step warmup. The cosine schedule spans 200,000 updates.
+`selection_max_nodes: 20` / `--max-nodes 20` filters **both train and validation**
+before sampling. Graphs with 20 nodes remain eligible; larger graphs are
+excluded whole, never truncated. The model still allocates 64 slots, preserving
+the architecture, padding and distance normalization. The frozen subset stores
+the cutoff and source/eligible split counts; changing it requires a fresh output.
 The frozen selection has eight nonempty/two empty training graphs and four
 validation graphs; batches contain 4, 4 and 2 training graphs per epoch.
 Original splits are retained and no test targets are read. The inherited
@@ -53,7 +63,7 @@ The job reports failure if it finishes short of 200,000 updates, retaining
 its checkpoint and metrics for diagnosis or continuation.
 
 Outputs default to a new timestamped directory under
-`$WORK/experiments/grale-octa-tiny-l1-200k/`; override with `GRALE_TINY_OUTPUT`
+`$WORK/experiments/grale-octa-tiny-l1-max20-200k/`; override with `GRALE_TINY_OUTPUT`
 before submission if needed. The wrapper prints the output path and saves
 the Slurm ID in `job-id.txt`. Logs go to `$WORK/logs/grale/`. Every 10,000
 updates it saves a checkpoint and three reconstruction examples; complete

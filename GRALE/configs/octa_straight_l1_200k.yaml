@@ -1,4 +1,5 @@
 # Ten-patch OCTA memorization run; preserve the original learned L1 objective.
+selection_max_nodes: 20
 alpha_adjacency: 0.2
 alpha_edge_features: 0.1
 alpha_edge_labels: 0.2
