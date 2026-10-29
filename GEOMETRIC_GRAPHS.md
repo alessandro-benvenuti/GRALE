@@ -51,6 +51,19 @@ python scripts/run_geometric.py --mode tiny --config octa_straight --output logs
 
 This preserves the checkpoint and original training config. Recovery results mark `evaluation_only=true`; unavailable training timings/gradient counts are not reconstructed. After Lightning validation, the runner explicitly restores the requested device before checkpoint comparison and inference.
 
+To continue a completed tiny fit for another 100,000 updates:
+
+```bash
+python scripts/run_geometric.py --mode tiny --config octa_straight --device cuda \
+    --resume logs/geometric-overfit-20261029/tiny/octa_straight/last.ckpt \
+    --steps 110000 --max-time 00:05:00:00 --output logs/geometric-continue-20261029 \
+    --checkpoint-every 10000 --snapshot-every 10000
+```
+
+`--steps` is the **total** optimizer-step target, including the checkpoint's 10,000 steps. Resumption restores weights and Adam state, retains the checkpoint's model/loss/batch settings, and extends cosine decay to the new total. The first resumed update uses the extended schedule (about `9.8e-5` here), because the finished schedule saved a zero learning rate. This is a learning-rate reactivation, not an uninterrupted original schedule. The shuffled loader restarts from its seed; exact continuation of the old sample order is not claimed. Reuse the byte-identical frozen subset and a new output root to preserve prior evidence.
+
+Periodic checkpoints go under `tiny/<config>/checkpoints/`. Three fixed GT/prediction pairs are saved at the starting step and every 10,000 steps under `tiny/<config>/intermediate/step-XXXXXX/`: the first nonempty training graph, densest training graph, and first nonempty validation graph. Each folder contains PNGs, predicted NPZ graphs, and per-example metrics. These diagnostic examples are not whole-dataset evaluation. The existing full train/validation export runs at completion. Plots label node/edge counts and retain out-of-frame nodes using shared axes.
+
 The original `train.py` also accepts these configurations and a prepared or frozen geometric manifest as `--dataset_path`. For the planned bounded comparison, prefer the runner because it saves the subsets, predictions, baselines and evaluation artifacts together.
 
 ## Outputs and interpretation
@@ -67,4 +80,4 @@ Verification uses real OCTA cases, including empty/disconnected graphs, coordina
 
 ## Verification
 
-See the [consolidated research record](research/overview.md#validation) for CPU checks, the 20-step run's unmet reconstruction gate, and the resolved metric-aggregation finding. Runtime checks do not establish learned reconstruction; no full fit, held-out pilot or GPU run has been performed.
+See the [consolidated research record](research/overview.md#validation) for CPU/GPU checks, the completed 1k/10k tiny fits and their unmet reconstruction gate, and the two-update GPU verification of optimizer resumption and snapshots. Runtime checks do not establish learned reconstruction; no held-out pilot has been performed.
