@@ -1,6 +1,6 @@
 # Experiment plan: GRALE for sparse geometric graphs
 
-Date: 2026-10-29. **Planning only: do not implement or launch training from this document without a subsequent instruction.** This consolidates the [design discussion](research/grilling-design.md); settings and acceptance thresholds labeled proposed are not previously agreed facts.
+Date: 2026-10-29. This records the [agreed design](research/overview.md#agreed-experiment); settings and acceptance thresholds labeled proposed are not established findings. The initial straight-graph implementation is committed as `1739776`; [validation and limitations](research/overview.md#validation) are recorded separately. This document does not itself authorize further training.
 
 ## Scientific motivation
 
@@ -26,9 +26,9 @@ For later splines, the agreed candidate is fixed cubic K8, with endpoints shared
 
 ## Evidence and data contract
 
-The [upstream COLORING CPU smoke check](research/upstream-coloring-smoke.md) passed: syntax/imports, data loading, three optimizer steps with finite gradients, validation, encode/decode, hard matching and checkpoint reload. Core model/loss source remained unchanged. This establishes runtime feasibility, **not convergence or GPU correctness**. Environment: Python 3.11.9, PyTorch 2.3.1, Lightning 2.4.0; older than README versions. No further full COLORING training is needed now.
+The [upstream COLORING CPU smoke check](research/overview.md#validation) passed: syntax/imports, data loading, three optimizer steps with finite gradients, validation, encode/decode, hard matching and checkpoint reload. Core model/loss source remained unchanged. This establishes runtime feasibility, **not convergence or GPU correctness**. Environment: Python 3.11.9, PyTorch 2.3.1, Lightning 2.4.0; older than README versions. No further full COLORING training is needed now.
 
-Reuse [prepared OCTA targets](../GNBM/gnbm-native-2d-20261027/experiments/native2d_long_20261028/octasynth/): `manifest.json`, `targets.zip`, `audit.json`. Raw source: `/lustre/fsn1/projects/rech/vnc/upz25mj/datasets/octa-synth-packed`. [Verified lineage and schema](research/grilling-geometry-evidence.md).
+Reuse [prepared OCTA targets](../GNBM/gnbm-native-2d-20261027/experiments/native2d_long_20261028/octasynth/): `manifest.json`, `targets.zip`, `audit.json`. Raw source: `/lustre/fsn1/projects/rech/vnc/upz25mj/datasets/octa-synth-packed`. [Verified lineage and schema](research/overview.md#datasets-and-targets).
 
 - Prepared cohort: 10,648 training / 4,840 validation crops, 128×128 pixels, from 88 / 40 source groups. The 372 reserved test sources remain unopened and outside pilot selection.
 - Training maximum: 52 nodes. Empty crops: 1,503 training / 747 validation. Preserve official source membership; never randomly split neighboring crops across train and validation.
@@ -107,7 +107,7 @@ Centreline/guide agreement is secondary at this stage. Score predicted chords ag
 - A frozen subset manifest recording source IDs, split membership, empty/size distribution, annotation provenance, coordinate conventions and overflow checks.
 - Per-run config, seed, code/data identity, environment, checkpoint, scalar losses and resource measurements.
 - Saved predicted graphs containing existence/confidence, XY, connectivity and source/crop metadata; no decoder access to original nodes or edges.
-- A compact report under `research/` with metric tables, reconstruction overlays, representative failures and a clear pass/fail/inconclusive assessment against the gates above.
+- Append findings to the [consolidated research record](research/overview.md#validation), linking run metrics, reconstruction overlays, representative failures and a clear pass/fail/inconclusive assessment against the gates above.
 
 ## Unresolved hypotheses and later work
 

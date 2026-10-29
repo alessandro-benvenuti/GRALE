@@ -4,6 +4,8 @@
 [![Model Weights](https://img.shields.io/badge/🤗-Model-yellow)](https://huggingface.co/PaulKrzakala/GRALE-128-32)
 [![NeurIPS 2025](https://img.shields.io/badge/NeurIPS-2025-0B6E4F)](https://neurips.cc/virtual/2025/loc/san-diego/poster/117714)
 
+Local documentation: [Project map](project-graph.md) · [Research record](research/overview.md) · [Experiment plan](EXPERIMENT_PLAN.md) · [Geometric run guide](GEOMETRIC_GRAPHS.md).
+
 ![GRALE Architecture](GRALE.png)
 
 ## Overview

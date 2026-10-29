@@ -57,11 +57,6 @@ The evaluator records all-empty and fixed training-prototype baselines, predicte
 
 Verification uses real OCTA cases, including empty/disconnected graphs, coordinate/edge round trips, one backward/update path, active-PE padding invariance, identity scoring and checkpoint reload. No general test framework, CI, broad boundary-case suite or full training is introduced.
 
-## Verification performed (2026-10-29)
+## Verification
 
-Detailed evidence and limitations: [geometric runtime report](research/geometric-runtime-check.md).
-
-- Syntax/imports, both real-OCTA smoke configurations, and the existing COLORING smoke passed on CPU (PyTorch 2.3.1, Lightning 2.4.0).
-- Coordinate-only tiny mode completed 20 optimizer/backward steps with finite values and checkpoint reload. Its nonempty reconstruction gate was **not met**: at threshold 0.5 it still decoded empty graphs. This is a short runtime result, not proof of learning or architectural failure.
-- Results are under `logs/geometric/smoke/` and `logs/geometric/tiny/`; these generated artifacts are ignored by Git. No full tiny-fit budget, held-out pilot or GPU job was launched.
-- Standards and spec review identified the same batch-ratio aggregation issue. It was resolved by labeling/logging batch diagnostics separately and retaining exact offline count aggregation.
+See the [consolidated research record](research/overview.md#validation) for CPU checks, the 20-step run's unmet reconstruction gate, and the resolved metric-aggregation finding. Runtime checks do not establish learned reconstruction; no full fit, held-out pilot or GPU run has been performed.
