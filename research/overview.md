@@ -203,7 +203,7 @@ Use GPU reports in `logs/geometric-fit-20261029/tiny/{octa_straight,octa_straigh
 
 ## Open hypotheses
 
-- Whether useful geometric reconstruction emerges beyond these first 1,000-step fits; node counts improved, but placement/connectivity remain poor and the tiny-fit gate failed.
+- Whether useful geometric reconstruction can be learned after resolving ambiguous correspondence; the completed 10k fits failed, and the tracked examples still collapse at 30k. Longer training alone has not resolved those examples.
 - Whether active-graph Laplacian features help coordinates, and whether repeated-eigenspace ambiguity matters.
 - Whether shortest-path supervision helps connectivity or competes with localization; retain it initially before ablation.
 - Whether latent size, loss weights, matching or optimization budget limit learning. A single small configuration cannot settle model-family suitability.
@@ -245,3 +245,286 @@ Each job uses one H100, a 5-hour training timer and 5.5-hour allocation, with no
 Every 10k steps, save a full checkpoint and three fixed GT/prediction examples (first nonempty training graph, densest training graph, first nonempty validation graph). PNGs, predicted NPZ graphs and per-example metrics go under `tiny/<config>/intermediate/step-XXXXXX/`; a baseline is saved at resumed step 010000. Full train/validation evaluation remains at completion. Plots label node/edge counts, identify GT guide overlays and use common axes that include all predicted nodes.
 
 Targeted verification: GPU smoke job `1696031` completed in 36 seconds with exit 0; restored global/Adam counters advanced from 10000 to 10002, gradients/weights changed, LR was nonzero, three PNGs per snapshot were exported, and checkpoint reload matched. An earlier assertion incorrectly required a conditionally used parameter's Adam counter to advance on both updates; the corrected check uses the maximum counter. A login-node CPU attempt was externally killed. No model/loss changes or broad test suite were introduced. Verification artifacts: `logs/geometric-continue-20261029/resume-smoke-gpu/`.
+
+### 30k collapse and matching diagnosis, 2026-10-29
+
+Current user scope is **graph input -> reconstruction of that same graph, without
+images**. Straight edges are the intended target; curvature and later image
+conditioning are outside this diagnosis.
+
+Both continuation runs reached saved 30k checkpoints. On the tracked 40-node,
+31-edge training graph `octa_20251028_242246_x1024_y1152`, both decode **40 nodes
+and zero edges**. Predicted spatial spreads are 0.381 px (coordinates) and
+0.424 px (Laplacian), versus 60.756 px for the target. Centroid errors are
+0.751 / 0.835 px. Spatial spread means RMS distance from each graph's own
+centroid. Thus the count can be right while the graph is completely wrong.
+The yellow paths on prediction overlays are GT guides, not reconstructed edges.
+These are selected-example diagnostics, not a new full-subset 30k evaluation.
+
+CPU inference checks on saved 10k and 30k checkpoints identify ambiguous learned
+correspondence as a concrete failure mechanism:
+
+- On the inspected two-node training graph, both variants assign each target
+  approximately 50% to each of two output slots. Encoder node embeddings are
+  distinct, so the input nodes are not completely indistinguishable internally.
+- On the 40-node coordinate-only example at 30k, the mean largest assignment
+  weight per target is 0.02489, close to the uniform reference 1/40. Its predicted
+  coordinates lie about 0.84 px from their transport-weighted target averages.
+- In an isolated coordinate-loss gradient check on that 40-node example,
+  substituting a geometric one-to-one correspondence produces a gradient norm
+  about 72 times larger. This holds the predictions fixed and does not retrain
+  anything; it demonstrates weak coordinate supervision under the current plan,
+  not that changing matching alone has already fixed learning.
+
+Plain-language mechanism: when each predicted node is told to fit nearly every
+target node, coordinate L2 encourages their average position, the centroid.
+Diffuse pair supervision can similarly favor average edge probabilities below
+the decoding threshold. The marginal penalty only checks row/column sums; a
+uniform assignment can satisfy those sums without establishing correspondence.
+
+The inherited matcher uses L1 distance between **learned projected embeddings**,
+not between graph XY coordinates. On the two-node example, all 32 projected
+dimensions have the same sign of output-minus-input across the active 2x2
+block. L1 then separates into a row term plus a column term: both one-to-one
+assignments have the same cost. At 30k, double-centered active cost residuals
+are at most 2.4e-7 for both variants. Sinkhorn therefore has essentially no
+preference between those correspondences; lowering temperature alone cannot
+break an exact tie. This failure can occur with categorical or continuous input
+attributes. Replacing categorical labels with coordinates may affect learning,
+but continuous features have **not** been established as the main cause.
+Collapsed outputs and ambiguous matching can reinforce each other.
+
+Other hypotheses remain open. Cost-sum normalization includes all 64 slots, so
+reusing upstream epsilon does not ensure comparable sharpness after increasing
+capacity. Decoder/optimization effects and relative loss strengths have not
+been excluded by a controlled training intervention. These findings do not
+establish that GRALE or transport matching cannot reconstruct geometric graphs.
+
+Evidence: [10k matcher audit](review-20261029/matcher_audit.json),
+[audit script](review-20261029/matcher_audit.py),
+[30k inference/gradient check](review-20261029/collapse_30k.json), and
+[30k check script](review-20261029/collapse_30k.py). For the latter, use the same
+Jean Zay module environment and single-thread settings as the 10k audit.
+Checkpoint and snapshot paths are under
+`logs/geometric-continue-20261029/tiny/<config>/{checkpoints,intermediate}/`.
+
+### Continuations stopped; synthetic matching comparison submitted
+
+At the user's request, jobs `1696063` and `1696064` were cancelled after scheduler
+elapsed times 57m19s and 53m15s respectively. Existing checkpoints and predictions
+are retained. They did not complete the planned 110k total updates.
+
+The next experiment isolates matching on **one synthetic bent path**, with XY
+nodes `(0.18,0.22)`, `(0.48,0.76)`, `(0.84,0.32)` and edges `0-1`, `1-2`.
+No images are used. Node order remains fixed. Three arms share identical initial
+parameter values, the existing coordinate-only architecture including 64 slots,
+all reconstruction coefficients, seed 1234, batch size one, learning rate 1e-4,
+50 warmup steps, and a 2,000-update cosine schedule:
+
+| Arm | Training correspondence |
+| --- | --- |
+| `l1` | Existing learned Sinkhorn matcher and L1 embedding cost |
+| `squared_l2` | Same learned matcher with squared-L2 cost; cost-sum normalization, epsilon 1e-4 and 50 Sinkhorn iterations unchanged |
+| `fixed` | Identity assignment supervises the first three slots and all padding; matcher bypassed in the loss |
+
+Fixed correspondence supplies supervision only: the decoder still receives only
+the latent, and inference uses predicted existence/adjacency at 0.5. Success
+requires exact recovery under the geometric scorer and assigned-node RMSE <=1 px
+at scale 128. Save predictions, loss curves, spatial spread and transport
+concentration. This measures single-graph memorization, not generalization,
+permutation robustness, or whether the latent depends on the input.
+
+An inherited optimizer discrepancy was verified: the YAML declares
+`weight_decay: 0`, but `configure_optimizers` omits that argument and AdamW uses
+0.01. The diagnostic preserves existing behavior across all arms and records
+the effective value; no optimizer correction is mixed into the comparison.
+The new `matcher_cost` option defaults to `l1`, preserving existing configurations.
+
+The two-update CPU smoke completed all arms with finite gradients and identical
+initial parameter hashes. Artifact: `/tmp/grale-synthetic-smoke-20261029/result.json`.
+GPU job **1698475** runs the three arms sequentially on one H100, within a
+20-minute allocation. **Completed successfully**, scheduler exit code `0:0`,
+elapsed time 6m32s. All three arms completed 2,000 updates and passed the
+single-graph reconstruction gate; measured results follow below.
+
+Entry point: [diagnose_synthetic_matching.py](../scripts/diagnose_synthetic_matching.py).
+Submission: `sbatch --parsable scripts/jeanzay_synthetic_matching.slurm`.
+Expected outputs: `logs/synthetic-matching-20261029/`; scheduler logs:
+`logs/synthetic-matching-1698475.{out,err}`.
+
+Interpretation: fixed-only success implicates learned correspondence under these
+settings. Squared-L2 success alongside L1 failure supports changing the cost.
+Both learned arms failing does not establish that transport cannot work, since
+temperature and padding remain unchanged. All arms failing would also require
+examining decoder/optimization; all succeeding would require a more representative
+reproducer of the vessel failure. These were the prespecified interpretations;
+the observed result is that all three arms succeeded.
+
+### Completed single-graph comparison
+
+| Arm | Correct nodes / edges | Assigned-node RMSE at 2k (px) | First saved snapshot passing the gate |
+| --- | --- | ---: | ---: |
+| Original L1 | 3 / 2, exact recovery | 0.0421 | 500 updates |
+| Squared-L2 | 3 / 2, exact recovery | 0.0399 | 500 updates |
+| Fixed correspondence | 3 / 2, exact recovery | 0.0292 | 200 updates |
+
+All initial parameter hashes match. Final predicted spatial spreads are
+45.728 / 45.731 / 45.736 px versus target 45.763 px. The learned matchers end
+with mean maximum target-assignment weights 0.999989 (L1) and 0.999999
+(squared-L2), essentially one-to-one. At the 200-update snapshot, L1 still has
+1.14 px spatial spread and 45.16 px localization RMSE, but escapes that collapse
+by the 500-update snapshot. Squared-L2 also passes by 500 updates. Snapshot
+spacing does not establish the exact update when either method first succeeds.
+
+This revises the diagnosis: continuous XY, 64 padded slots, and the inherited
+L1 matcher do **not inherently prevent** learning this graph. Fixed assignment
+learns earlier in this run, while squared-L2 and L1 achieve similarly accurate
+final reconstructions. One graph/seed does not establish a general advantage
+for squared-L2. The previously measured L1 ties and diffuse plans on vessel
+checkpoints remain real observations, but are not by themselves proof that L1
+is the sole root cause of those failures. A more representative reproducer is
+needed; fitting one previously failing small vessel patch alone would separate
+single-example difficulty from training on multiple graphs. No further runs
+were launched as part of checking these results.
+
+Results: `logs/synthetic-matching-20261029/result.json`; per-arm
+`snapshots.json`, `losses.json`, `prediction-002000.{png,npz}`, transport arrays
+for learned arms, and `final.ckpt`. The L1 final prediction was visually checked
+against the target and agrees with the geometric scorer. Comparison figure:
+`logs/synthetic-matching-20261029/learning-curves.png`.
+
+### Single existing OCTA patch: matching comparison submitted
+
+The user requested the same comparison on a small dataset graph. Selected
+training sample **`octa_20251028_260381_x640_y384`**, with **two nodes and one
+edge**, from the frozen manifest
+`logs/geometric-continue-20261029/subsets/tiny-1234.json`. This is an existing
+OCTA-Synth graph, also inspected in the 10k/30k collapse diagnosis. Its original
+normalized XY, connectivity and node order are used without augmentation or
+refitting. No image enters the model. Saved `target.npz` is checked against the
+original archived NPZ, preserving both nodes and the edge.
+
+Repeat `l1`, `squared_l2`, and `fixed` on this one graph, with the same 64-slot
+coordinate-only model, seed 1234, identical initial weights, batch size one,
+2,000 updates, 50-step warmup, base LR 1e-4, and effective AdamW weight decay
+0.01 as the completed synthetic comparison. Losses, transport normalization,
+epsilon and decoding thresholds remain unchanged. This isolates fitting the
+previously failing example alone from fitting it alongside other graphs; it
+does not establish performance across the dataset.
+
+The shared diagnostic runner now accepts `--manifest` and `--sample-id` and
+uses the actual active-node count for transport diagnostics. Default synthetic
+behavior is retained. The prepared-data path verifies the expected 128x128 pixel
+metric and records the selected manifest/sample identity in the output.
+Two-update CPU checks passed for all arms with finite gradients, equal initial
+parameter hashes, and an unchanged target round trip. Smoke artifacts:
+`/tmp/grale-real-single-smoke-20261029/`.
+
+GPU job **1699402** completed all three arms successfully, exit `0:0`, elapsed
+6m49s. All three passed the two-node reconstruction gate; results below. Artifacts:
+`logs/real-single-matching-20261029/`; scheduler logs:
+`logs/real-single-matching-1699402.{out,err}`.
+
+Reproduction command from the repository root:
+
+```bash
+sbatch --parsable --job-name=grale-real-single \
+  --output=logs/real-single-matching-%j.out \
+  --error=logs/real-single-matching-%j.err \
+  scripts/jeanzay_synthetic_matching.slurm \
+  --manifest logs/geometric-continue-20261029/subsets/tiny-1234.json \
+  --sample-id octa_20251028_260381_x640_y384 \
+  --output logs/real-single-matching-20261029
+```
+
+### Eight-node existing OCTA patch: additional comparison submitted
+
+At the user's request, submit the same three-arm single-graph diagnostic on
+training sample **`octa_20251028_297896_x896_y768`**: **8 nodes, 5 edges,
+3 connected components**, using the same frozen tiny manifest. This patch also
+failed in the original ten-graph fit. Keep its original coordinates, node order,
+disconnected topology and 128-pixel metric. No images enter training.
+
+All settings match the two-node comparison: coordinate-only 64-slot model,
+L1 / squared-L2 / fixed correspondence, identical initial weights, seed 1234,
+batch size one, 2,000 updates, 50 warmup steps, unchanged loss coefficients,
+temperature and optimizer behavior. This is one additional dataset patch,
+not a sweep or a new data split. A two-update CPU smoke completed all three
+arms with finite gradients and equal initialization hashes; artifacts:
+`/tmp/grale-real-eight-smoke-20261029/`.
+
+GPU job **1699478** completed all three arms, exit `0:0`, elapsed 6m11s.
+Only fixed correspondence passed the eight-node reconstruction gate; results
+below. Outputs: `logs/real-eight-matching-20261029/`; scheduler logs:
+`logs/real-eight-matching-1699478.{out,err}`.
+
+```bash
+sbatch --parsable --job-name=grale-real-eight \
+  --output=logs/real-eight-matching-%j.out \
+  --error=logs/real-eight-matching-%j.err \
+  scripts/jeanzay_synthetic_matching.slurm \
+  --manifest logs/geometric-continue-20261029/subsets/tiny-1234.json \
+  --sample-id octa_20251028_297896_x896_y768 \
+  --output logs/real-eight-matching-20261029
+```
+
+### Completed two-node and eight-node dataset-patch comparisons
+
+Both jobs completed all 2,000 updates per arm without training errors. All six
+initial parameter hashes match the earlier synthetic run. Model, optimizer,
+loss weights and decoding settings are shared; each arm fits one unchanged
+dataset graph. This is one seed per graph and method, not a population estimate.
+
+| Patch | Matching | Localized nodes (2 px) | Predicted / GT edges | Correct edges | Assigned-node RMSE (px) | Gate |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| 2 nodes, 1 edge | L1 | 2/2 | 1/1 | 1 | 0.0090 | Pass |
+| 2 nodes, 1 edge | Squared-L2 | 2/2 | 1/1 | 1 | 0.0290 | Pass |
+| 2 nodes, 1 edge | Fixed | 2/2 | 1/1 | 1 | 0.0109 | Pass |
+| 8 nodes, 5 edges | L1 | 2/8 | 3/5 | 1 | 16.7469 | Fail |
+| 8 nodes, 5 edges | Squared-L2 | 0/8 | 0/5 | 0 | 27.5368 | Fail |
+| 8 nodes, 5 edges | Fixed | 8/8 | 5/5 | 5 | 0.0364 | Pass |
+
+All methods predict the correct node count on both patches at 2k. Edge
+correctness includes the node-localization association; a predicted edge between
+mislocalized nodes does not count as recovered. RMSE includes all assigned
+nodes, including those outside the 2-pixel matching tolerance.
+
+On the two-node patch, fixed first passes at the saved 500-update snapshot;
+both learned matchers first pass at the saved 1,000-update snapshot. Both
+learned methods initially cluster the nodes and later escape, ending with
+essentially one-to-one assignments. This previously failing dataset example is
+therefore learnable alone using the original matcher.
+
+On the eight-node patch, fixed first passes at the saved 500-update snapshot
+and retains accurate positions/topology through 2k. L1 partially separates
+nodes but leaves four outputs sharing almost uniform 0.25 assignments to the
+four upper target nodes; another two outputs mix two lower leaves at roughly
+0.5 each. Squared-L2 divides the graph into two groups of four nodes, with
+roughly 0.25 assignment weights within each group. Neither learned arm passes
+at any saved snapshot. Mean maximum target assignment weights at 2k are
+0.498 (L1) and 0.255 (squared-L2), compared with values essentially 1 on the
+successfully reconstructed two-node patch.
+
+The saved transport arrays explain the positions directly: every active L1
+prediction is within 0.12 px of the target average induced by its transport
+row; every squared-L2 prediction is within 0.21 px. These are **group-average
+collapses**, not necessarily a single global-centroid collapse. Their overall
+spatial spreads can be fairly large (60.51 / 56.50 px versus target 62.98 px)
+while individual nodes and connectivity remain wrong. Spatial spread alone is
+therefore insufficient to certify reconstruction.
+
+Controlled conclusion: this model and coordinate supervision can memorize the
+eight-node graph when correspondence is supplied. Learning correspondence is
+a demonstrated obstacle on this example under the tested budget/settings.
+Squared-L2 alone does not resolve it and performs worse here; the problem is
+not specific to L1's additive-cost degeneracy. These results do not establish
+that learned matching can never succeed with other settings, more steps, or
+other seeds. They also do not yet isolate which part of learned matching
+(feature quality, sharpness, optimization, etc.) prevents one-to-one assignments.
+No further training was launched while inspecting these results.
+
+Evidence: `logs/{real-single,real-eight}-matching-20261029/result.json`,
+per-arm `snapshots.json`, final `prediction-002000.{png,npz}`, and learned-arm
+`transport-002000.npy`. All three final eight-node prediction plots were
+visually checked against the target; they agree with the scorer and transport
+analysis. Learning curves are saved in each run's `learning-curves.png`.

@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 from torch import Tensor
 from GRALE.attention import EvoformerSetMatching
-from GRALE.loss.utils import pairwise_L1_norm
+from GRALE.loss.utils import pairwise_L1_norm, pairwise_squared_norm
 from GRALE.loss.matching import batched_sinkhorn_projection, batched_hungarian_projection, batched_log_sinkhorn_projection
 
 # Note: inputs = unsorted, outputs = sorted (by the model).
@@ -51,7 +51,8 @@ class SinkhornMatcher(AbstractMatcher):
                  tol_sinkhorn = 1e-3,
                  fixed_n_iters_sinkhorn = False,
                  normalize_cost_matrix = True,
-                 epsilon = 1e-4
+                 epsilon = 1e-4,
+                 matcher_cost = 'l1'
                  ):
         
         super().__init__()
@@ -68,6 +69,9 @@ class SinkhornMatcher(AbstractMatcher):
         self.fixed_n_iters = fixed_n_iters_sinkhorn
         self.normalize_cost_matrix = normalize_cost_matrix
         self.epsilon = epsilon
+        if matcher_cost not in ('l1', 'squared_l2'):
+            raise ValueError(f'Unknown matcher_cost: {matcher_cost}')
+        self.matcher_cost = matcher_cost
         
     def forward(self, node_embeddings_inputs: Tensor, node_masks_inputs: Tensor, node_embeddings_outputs: Tensor, hard = False):
         
@@ -82,7 +86,8 @@ class SinkhornMatcher(AbstractMatcher):
         # Compute affinity
         a = self.linear_outputs(node_embeddings_outputs)
         b = self.linear_inputs(node_embeddings_inputs)
-        C = pairwise_L1_norm(a,b)
+        C = (pairwise_L1_norm(a,b) if self.matcher_cost == 'l1'
+             else pairwise_squared_norm(a,b).clamp_min(0))
         if self.normalize_cost_matrix:
             C = C/C.sum(dim=(1,2),keepdim=True)
         C = C/self.epsilon
