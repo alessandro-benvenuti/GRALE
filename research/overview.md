@@ -167,11 +167,22 @@ An upstream lazy-loader boundary case remains: using an epoch chunk equal to the
 | Reconstruction quality | Tiny quality gate **not met**: predictions remained empty at threshold 0.5; nonempty F1/count accuracy zero, empty accuracy one, localization unavailable |
 | Review | Standards and spec review found the same CSV aggregation issue; fixed and confirmed by both reviewers |
 
-A concurrent PE process was externally killed with exit 137; sequential batch-two verification passed without an architecture change. CPU smoke batches changed during verification, so timings are not a controlled PE efficiency comparison. No full 1,000-step fit, held-out pilot or GPU job was launched.
+A concurrent PE process was externally killed with exit 137; sequential batch-two verification passed without an architecture change. CPU smoke batches changed during verification, so timings are not a controlled PE efficiency comparison. Those runtime checks did not include a full tiny fit, held-out pilot or GPU execution; the subsequent training submission is recorded below.
 
 Scientific metrics in `metrics.json` aggregate raw counts/errors over the complete subset and separate empty/nonempty populations, sources and graph-size bins. CSV `batch/` values are step-only diagnostics; only additive error/loss terms retain epoch aggregation. Coordinate RMSE includes assigned pairs **before** the 2-pixel match filter, with coverage reported; unavailable localization is null rather than zero. The decoder never receives GT node counts/topology for scoring.
 
 Artifacts: `logs/geometric/{smoke,tiny}/`, frozen manifests `logs/geometric/subsets/`; Git-ignored. Both smoke variants used subset SHA256 `e8e483e3c5f71f710a96c68becfe38e42b81f80b461d06dbae4c4813fa1e5727`. Saved metrics include all-empty/training-prototype baselines and chord/guide comparisons. Twenty steps establish execution, not useful reconstruction or architectural failure. [Runner](../scripts/run_geometric.py) · [metrics](../GRALE/loss/geometry.py).
+
+### Submitted tiny fits, 2026-10-29
+
+| Variant | Slurm job | Dependency |
+| --- | --- | --- |
+| Coordinates only | `1690370` | After existing GPU job `1673566` finishes |
+| Coordinates + Laplacian | `1690371` | After existing GPU job `1673580` finishes |
+
+Both request one H100, 1,000 optimizer steps, batch size 4, 50 warmup steps, and the same frozen 8-nonempty/2-empty training graphs with 4 validation graphs. Training is capped at 30 minutes per variant, within a 40-minute allocation. The jobs occupy the two existing GPU lanes sequentially, preserving the two-GPU limit. These are diagnostic fits, far below the paper's 300k/700k/1.5M steps, not paper-budget reproductions. No held-out pilot is automatically launched.
+
+Launcher: [jeanzay_geometric.slurm](../scripts/jeanzay_geometric.slurm). Submission record, scheduler logs, checkpoints and eventual metrics: `logs/geometric-fit-20261029/`. At submission both jobs were dependency-queued; no learning result is claimed yet.
 
 ## Open hypotheses
 
