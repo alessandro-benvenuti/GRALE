@@ -3,6 +3,7 @@ import torch.nn as nn
 import os
 import yaml
 from .loss.objective import GraphAutoencoderObjective, GraphAutoencoderMetric
+from .loss.geometry import GeometricGraphMetric
 from .model import get_encoder, get_decoder, get_matcher, get_target_builder, get_input_builder
 from GRALE.data import BatchedDenseData
 import lightning.pytorch as pl
@@ -21,7 +22,7 @@ class GRALE_model(pl.LightningModule):
         self.input_builder = get_input_builder(config)
         self.n_nodes_max = config['n_nodes_max']
         self.training_objective = GraphAutoencoderObjective(get_alpha(config))
-        self.validation_metric = GraphAutoencoderMetric()
+        self.validation_metric = GeometricGraphMetric() if config.get('node_input') == 'features' else GraphAutoencoderMetric()
         self.save_hyperparameters(config)
         self.epoch_start_time = 0
     
@@ -52,7 +53,8 @@ class GRALE_model(pl.LightningModule):
         loss, log_loss = self.training_objective(outputs, targets, permutation_matrices)
 
         # Log metrics
-        # self.log_dict(log_loss, on_epoch=True, batch_size=inputs.batchsize)
+        if self.hparams.get('node_input') == 'features':
+            self.log_dict({'train/' + key: value for key, value in log_loss.items()}, on_epoch=True, batch_size=inputs.batchsize)
         # lr = self.trainer.optimizers[0].param_groups[0]['lr']
         # self.log("lr", lr, prog_bar=False, on_step=True, on_epoch=False)
 
@@ -80,7 +82,15 @@ class GRALE_model(pl.LightningModule):
         metric, log_metric = self.validation_metric(self.format_logits(aligned_outputs), targets, permutation_matrices=None)
 
         # Log metrics
-        self.log_dict(log_metric, on_epoch=True, batch_size=inputs.batchsize, sync_dist=True)
+        if self.hparams.get('node_input') == 'features':
+            # Ratios from different empty/nonempty populations cannot be averaged.
+            # The geometric evaluator aggregates raw counts over the full subset.
+            self.log('edit_graph', log_metric.pop('edit_graph'), on_epoch=True,
+                     batch_size=inputs.batchsize, sync_dist=True)
+            self.log_dict({'batch/' + key: value for key, value in log_metric.items()},
+                          on_step=True, on_epoch=False, batch_size=inputs.batchsize)
+        else:
+            self.log_dict(log_metric, on_epoch=True, batch_size=inputs.batchsize, sync_dist=True)
         
         # Also get the training loss for logging
         permutation_matrices, log_matcher = self.matcher(node_embeddings_inputs, node_masks_inputs, node_embeddings_outputs, hard = False)
@@ -128,7 +138,8 @@ class GRALE_model(pl.LightningModule):
         Apply activation functions to the outputs of the decoder
         '''
         outputs.h = torch.sigmoid(outputs.h)
-        outputs.nodes.labels = torch.softmax(outputs.nodes.labels, dim = -1)
+        if 'labels' in outputs.nodes:
+            outputs.nodes.labels = torch.softmax(outputs.nodes.labels, dim = -1)
         outputs.edges.adjacency = torch.sigmoid(outputs.edges.adjacency)
         outputs.edges.labels = torch.softmax(outputs.edges.labels, dim = -1)
         return outputs

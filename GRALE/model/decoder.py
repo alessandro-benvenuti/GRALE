@@ -68,10 +68,12 @@ class EvoformerGraphDecoder(AbstractGraphDecoder):
                  dropout_mlp,
                  norm_post_or_pre='pre',
                  triangular_multiplication_mode='symmetric',
-                 triangular_attention_mode='none'
+                 triangular_attention_mode='none',
+                 geometric=False,
                  ):
         
         super().__init__()
+        self.geometric = geometric
         
         self.EvoformerDecoder = EvoformerDecoder(n_layers=n_layers,
                                                  src_dim=graph_embedding_dim, 
@@ -90,7 +92,7 @@ class EvoformerGraphDecoder(AbstractGraphDecoder):
         
         self.head_h = MLP_head(in_dim = node_model_dim, hidden_dim = None, out_dim = 1, dropout = 0.)
         self.head_node_embeddings = MLP_head(in_dim = node_model_dim, hidden_dim = node_hidden_dim, out_dim = node_model_dim, dropout = 0.)
-        self.head_node_labels = MLP_head(in_dim = node_model_dim, hidden_dim = None, out_dim = node_labels_dim, dropout = 0.)
+        self.head_node_labels = MLP_head(in_dim = node_model_dim, hidden_dim = None, out_dim = node_labels_dim, dropout = 0.) if node_labels_dim else None
         self.head_node_features = MLP_head(in_dim = node_model_dim, hidden_dim = node_hidden_dim, out_dim = node_features_dim, dropout = 0.)
         self.head_A = MLP_head(in_dim = edge_model_dim, hidden_dim = None, out_dim = 1, dropout = 0.)
         self.head_edge_labels = MLP_head(in_dim = edge_model_dim, hidden_dim = None, out_dim = edge_labels_dim, dropout = 0.)
@@ -103,14 +105,20 @@ class EvoformerGraphDecoder(AbstractGraphDecoder):
         
         h = self.head_h(X).squeeze(-1)
         node_embeddings = self.head_node_embeddings(X)
-        node_labels = self.head_node_labels(X)
         node_features = self.head_node_features(X)
         A = self.head_A(E).squeeze(-1)
         edge_labels = self.head_edge_labels(E)
         edge_features = self.head_edge_features(E)
+        nodes = {'features': node_features}
+        if self.head_node_labels is not None:
+            nodes['labels'] = self.head_node_labels(X)
+        if self.geometric:
+            A = (A + A.transpose(1, 2)) / 2
+            edge_labels = (edge_labels + edge_labels.transpose(1, 2)) / 2
+            edge_features = (edge_features + edge_features.transpose(1, 2)) / 2
         
         outputs = BatchedDenseData(h = h,
-                                   nodes={'labels': node_labels, 'features': node_features}, 
+                                   nodes=nodes,
                                    edges={'labels': edge_labels, 'features': edge_features, 'adjacency': A})
         
         return node_embeddings, outputs

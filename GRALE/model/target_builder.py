@@ -69,5 +69,15 @@ class DiffusionTargetBuilder(AbstractTargetBuilder):
             targets.pad_(target_size)
         return targets
 
+class GeometricTargetBuilder(nn.Module):
+    def forward(self, data):
+        return BatchedDenseData(data.h.clone(),
+            nodes={'features': data.nodes.features},
+            edges={'labels': data.edges.labels, 'adjacency': data.edges.adjacency,
+                   'features': data.edges.SP.unsqueeze(-1) / data.size})
+
+
 def get_target_builder(config):
+    if config.get('node_input') == 'features':
+        return GeometricTargetBuilder()
     return DiffusionTargetBuilder()

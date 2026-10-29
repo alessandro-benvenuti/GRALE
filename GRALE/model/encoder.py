@@ -60,16 +60,22 @@ class EvoformerGraphEncoder(AbstractGraphEncoder):
                  norm_post_or_pre='pre',
                  triangular_multiplication_mode='symmetric',
                  triangular_attention_mode='none',
+                 node_input='labels',
+                 node_features_dim=None,
                  ):
         
         super().__init__()
         
         self.n_nodes_max = n_nodes_max
+        self.node_input = node_input
+        if node_input == 'features':
+            self.empty_embedding = nn.Parameter(torch.zeros(1, graph_embedding_size, graph_embedding_dim))
+            self.node_model_dim = node_model_dim
         node_pos_dim = min(node_pos_dim, n_nodes_max-1)  # max n_nodes_max-1 non-trivial eigenvectors
         self.positionnal_nodes = partial(build_laplacian_node_pos, n_eigvecs=node_pos_dim)
         self.positionnal_edges = SineEmbedding(edge_pos_dim)
         
-        X_dim = node_labels_dim + node_pos_dim
+        X_dim = (node_features_dim if node_input == 'features' else node_labels_dim) + node_pos_dim
         E_dim = edge_labels_dim + 2*X_dim + edge_pos_dim
 
         self.mlp_nodes = MLP(X_dim, node_hidden_dim, node_model_dim, dropout_mlp)
@@ -101,8 +107,9 @@ class EvoformerGraphEncoder(AbstractGraphEncoder):
                                                     )
         
     def nodes_and_edges_embedding(self, data):
-        node_labels = data.nodes.labels
-        node_pos = self.positionnal_nodes(data.edges.adjacency).to(node_labels.dtype)
+        node_labels = data.nodes.features if self.node_input == 'features' else data.nodes.labels
+        h = data.h if self.node_input == 'features' else None
+        node_pos = self.positionnal_nodes(data.edges.adjacency, h=h).to(node_labels.dtype)
         X = torch.concat([node_labels, node_pos], dim=-1)
         E1 = build_E_from_X(X)
         E2 = data.edges.labels
@@ -112,6 +119,16 @@ class EvoformerGraphEncoder(AbstractGraphEncoder):
                                        
     def forward(self, data: BatchedDenseData):
         h = data.h
+        if self.node_input == 'features' and not h.any(-1).all():
+            active = h.any(-1)
+            nodes = data.nodes.features.new_zeros(data.batchsize, data.size, self.node_model_dim)
+            graph = self.empty_embedding.expand(data.batchsize, -1, -1).clone()
+            if active.any():
+                subset = BatchedDenseData(h[active],
+                    nodes={key: value[active] for key, value in data.nodes.items()},
+                    edges={key: value[active] for key, value in data.edges.items()})
+                nodes[active], graph[active] = self.forward(subset)
+            return nodes, graph
         mask_nodes = ~h
         mask_edges = mask_nodes_to_edges(mask_nodes)
         X, E = self.nodes_and_edges_embedding(data)
