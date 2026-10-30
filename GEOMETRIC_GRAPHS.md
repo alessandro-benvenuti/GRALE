@@ -128,6 +128,48 @@ The original `train.py` also accepts these configurations and a prepared or froz
 
 ## Outputs and interpretation
 
+### Inspect a completed run
+
+The CPU-only inspector checks all frozen train/validation patches and the four
+failure questions: geometry/centroid/spread, learned assignment sharpness,
+agreement with transport-weighted GT averages, and the evolution of the loss
+components. It never creates an optimizer or writes to the checkpoint, source
+targets or original CSV logs. From the Jean Zay login node:
+
+```bash
+unset GRALE_VENV
+bash cluster/jean_zay/submit_geometric_inspection.sh \
+  "$WORK/experiments/grale-octa-tiny-l1-max20-200k/20261029-171558/tiny/octa_straight_l1_200k"
+```
+
+The wrapper prints a new inspection directory and CPU job ID. It uses the
+existing H100 module-backed SCRATCH venv for compatible libraries but requests
+**no GPU**. Logs are `$WORK/logs/grale/grale-inspect-JOBID.{out,err}`. The output
+contains `summary.txt`, `report.json`, per-graph plots and transport arrays,
+`loss-curves.{png,csv}`, and geometry trajectories for the three examples saved
+during training. A sibling `.zip` packages these diagnostics without checkpoints
+or source archives; attach it for review, or paste the summary from the job log.
+
+The inspector verifies the checkpoint, frozen subset, target archives and model
+source against the recorded hashes. It also compares CPU predictions with the
+saved predictions, reporting numerical/threshold mismatches. Spatial spread
+uses RMS distance from each graph's own centroid. Matching entropy is computed
+only for real GT columns over all output slots; row conditionals exclude dummy
+targets and are weighted by real-target transport mass. Padding-only mixing is
+therefore not treated as a real-node ambiguity. The report checks the exact
+squared-error decomposition into residual to the transported target average
+and target variance within each row. These are diagnostic measurements, not
+an automatic root-cause verdict.
+
+Loss plots show both unweighted terms and their actual coefficients, plus
+validation terms and LR. Default curves average within 1,000-step bins. The
+summary compares the first/last 300 logged values and the last versus preceding
+300 values; step means have equal weight per optimizer update, not per graph.
+The architecture and loss do not change during inspection. To run directly in
+an appropriate CPU environment, use `python scripts/inspect_geometric_run.py
+--run-dir /path/to/tiny/config --output /new/inspection/path`. Multiple training
+CSV versions require an explicit `--metrics-csv` to avoid silently mixing runs.
+
 Each run saves its effective config, CSV losses, checkpoint, environment/code/data identity, inference checks and timings. `train/` and `valid/` contain predicted NPZ graphs, overlays, and `metrics.json`. Yellow overlays are supplied guide paths; cyan lines are straight chords. Predictions include selected XY/edges, node/edge confidence, all-slot existence scores, crop origin, source and pixel metric.
 
 Metrics separate empty/nonempty graphs, source IDs and size bins. Node association uses minimum total pixel distance; matches within 2 pixels count toward node/edge F1. Coordinate RMSE includes every assigned pair before the tolerance filter, with coverage reported; missing localization is `null`, never a favourable zero. Exact recovery also requires correct node count and connectivity. Learned-matcher localization is reported separately.

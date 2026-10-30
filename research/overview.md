@@ -589,3 +589,36 @@ cutoff was rejected. Insufficient eligible populations fail before training;
 a reserved test entry pointing to a nonexistent archive was not opened. The
 two-update CPU run also passed finite backward, snapshots and checkpoint reload
 with the filtered cohort. These checks do not audit remote dataset contents.
+
+### Completed 200k L1 fit and inspection preparation, 2026-10-30
+
+User-supplied logs confirm job **1701891** reached 200,000 finite backward
+updates on an H100, saved snapshots through step 200k, and passed checkpoint
+reload. The run is
+`/lustre/fswork/projects/rech/vnc/upz73jr/experiments/grale-octa-tiny-l1-max20-200k/20261029-171558/`.
+The supplied environment record confirms PyTorch 2.3.1 from its module and the
+SCRATCH venv `grale-h100-torch231`. Frozen subset SHA256:
+`c199e3a4d18229b067a3b779c6f17df5941624a5a94c3d77a86cbedb6484ddec`.
+
+The reported tiny-fit gate is false. Nonempty training node/edge F1 are
+0.017857 / 0.024390, coordinate RMSE 56.3631 px, node-count accuracy 1.0 and
+exact reconstruction 0. Validation F1 are both zero, RMSE 56.8977 px,
+node-count accuracy 1/3 and exact reconstruction 0. Component-count accuracy
+is zero in both splits; cycle-count accuracy and empty exactness are one.
+These aggregates establish failed training-set reconstruction, but do not
+alone establish centroid or group-average collapse on this checkpoint.
+
+`scripts/inspect_geometric_run.py` and the CPU submission wrapper implement
+the requested four checks over all 14 frozen graphs, loss CSVs and the saved
+geometry snapshots. The diagnostic verifies recorded hashes, reproduces saved
+predictions, measures real-node transport concentration and target-average
+residuals, checks the exact squared-loss decomposition, and packages plots,
+arrays and a compact summary. It does not train or modify original artifacts.
+The remote checkpoint is not mounted locally; actual diagnostic conclusions
+require running it on Jean Zay and retrieving its output.
+Local validation reproduced every saved prediction and aggregate reconstruction
+metric from the two-update fixture. Constructed sharp, uniform and group-mixed
+plans verified the assignment diagnostics and exact variance decomposition.
+A synthetic CSV verified first/last windows, late-plateau measurements and loss
+coefficients. Generated graph/loss plots were visually checked. These are tests
+of the inspector, not new findings about the 200k checkpoint.
