@@ -141,7 +141,8 @@ def set_scale(model, value):
         model.decoder.coordinate_residual_scale.fill_(value)
 
 
-def evaluate(model, datasets, arm, step, output):
+def evaluate(model, datasets, arm, step, output, forward_fn=None):
+    predict = forward if forward_fn is None else forward_fn
     model.eval()
     folder = output / 'snapshots' / f'step-{step:06d}'
     folder.mkdir(parents=True)
@@ -156,7 +157,7 @@ def evaluate(model, datasets, arm, step, output):
             for index, sample in enumerate(dataset.samples):
                 graph = dataset[index]
                 batch = custom_collate_fn([graph]).to(model.device)
-                output_graph, T, _, terms = forward(model, batch)
+                output_graph, T, _, terms = predict(model, batch)
                 prediction = decode_graph(model.format_logits(output_graph.clone())[0])
                 target = decode_graph(graph)
                 metric = np.asarray(dataset.load_target(index)['metric'])

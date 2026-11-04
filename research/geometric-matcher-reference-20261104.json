@@ -1,0 +1,9 @@
+{
+  "source_repository": "Graph-Native-Betti-Matching",
+  "source_revision": "9cc28da9d5324a6beaa5fcef6bed5f629f69a08a",
+  "source_file": "models/matcher.py",
+  "vendored_file": "GRALE/model/gnbm_matcher_reference.py",
+  "file_sha256": "c179c3492981d0aa684a7cf1d272fbcd77979c63fa683106e89b13aad2995660",
+  "source_file_dirty": false,
+  "note": "Unmodified reference implementation. GRALE adapter supplies XY dimensions, sigmoid node confidence and dense adjacency probabilities."
+}
