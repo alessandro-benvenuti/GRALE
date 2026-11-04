@@ -126,3 +126,28 @@ The job started at **16:19:15** on `jean-zay-iam07`. POT/package checks and
 CUDA availability passed. Initial learned-control snapshots at 200/1000/2000
 updates reproduce the previous A100 pilot's RMSE exactly. New matcher outcomes
 remain pending until their actual optimizer updates and endpoint checks.
+
+## Post-hoc export readback
+
+Hungarian's endpoint emits edges while strict spatial edge F1 remains zero.
+To distinguish edge learning from localization error, prepare a bounded
+**one-core, zero-GPU, five-minute** readback using saved arrays only. It does not
+load models, optimize, select thresholds, or change the primary 2-pixel metric.
+It first reproduces strict counts, then measures adjacency F1 under unrestricted
+Euclidean position-derived one-to-one correspondence. This supplementary metric
+ignores absolute node-localization tolerance and must not be called spatially
+correct graph reconstruction. Its correspondence does not use GT adjacency.
+
+A second post-hoc check cyclically swaps saved predictions within equal-GT-count
+training groups (manifest order), yielding four real graphs from the 16- and
+20-node pairs. Decoder predictions from another graph represent an input swap
+without new inference. Compare own-input versus swapped-input RMSE/coverage,
+then repeat after separately centering each point set to distinguish shape from
+centroid information. This is a diagnostic on a small training subset, not an
+independent generalization result. It tests whether broad output spread merely
+reflects a common spatial template.
+
+The generated-fixture export readback completed. Additional analytic examples
+check strict versus unrestricted connectivity, known same-count pairings,
+translation-invariant centering and sensitivity to differing shapes. All
+individual arrays remain on Jean Zay; only aggregate readback is returned.
