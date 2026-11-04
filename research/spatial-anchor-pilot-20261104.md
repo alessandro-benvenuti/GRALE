@@ -84,3 +84,40 @@ parity, one fixed anchor per grid cell, unchanged initial matching embeddings,
 and checkpoint reload. Local fixture outcomes are not experimental findings on
 the frozen OCTA cohort. Remote submission and results are recorded after
 execution, not inferred from these tests.
+
+## Remote submission and A100 fallback
+
+The frozen scientific source is commit
+`d66affa17bc835142b1d0f4b2c47a49dfcc4b988`, source-archive SHA256
+`1a6609b0efadd8f73020320d0368bf3aa711c29fbce15435fa72ddfb0e823626`.
+It was deployed into the isolated directory above without changing the existing
+remote GRALE checkout. The archive identity and source commit are saved there.
+
+H100 development-queue job **1951843** was submitted at 14:35 Paris time.
+It remained pending with `QOSGrpGRES`. After the user requested trying A100 if
+waiting, both development queues and regular A100 were checked using Slurm
+test-only submissions. At 14:43, A100 estimated 14:49 versus H100 14:54; regular
+A100 estimated the next morning. These estimates are not guaranteed starts.
+
+The H100 job was cancelled while pending, with zero elapsed time; absence from
+the queue and accounting's cancellation were checked before submitting A100.
+Replacement **1952135** requests one A100, four CPU cores, 90 minutes,
+`qos_gpu_a100-dev`, and the same four sequential 5k-step arms. There is one
+active pilot and no automatic chaining. The fallback changes hardware and its
+existing environment (PyTorch 2.3.0 versus H100 2.3.1); all four compared arms
+run on the same hardware/environment. It does not change the frozen scientific
+source or original cohort.
+
+- Batch: `cluster/jean_zay/spatial_anchor_pilot_a100.slurm`, SHA256
+  `ddf770275400c7c3fac5142f38c15b589b675e29e760ea21881ced449af0ecb0`.
+  The identical remote wrapper is saved separately from the frozen source as
+  `$WORK/experiments/grale-spatial-anchor-20261104/a100-fallback.slurm`.
+- Existing venv: `$SCRATCH/venvs/grale-a100-torch230`; no installation or update.
+- New output: `$WORK/experiments/grale-spatial-anchor-20261104/paired-5000-a100`.
+- Logs: `$WORK/logs/grale/grale-anchor-pilot-1952135.{out,err}`.
+- Remote records: `submission.json` preserves the initial H100 submission;
+  `submission-a100.json` records its replacement. Both are under the new
+  experiment parent directory.
+
+At submission the A100 job was pending. Completion and experimental outcomes
+must be established from its actual logs, endpoint result and accounting.
