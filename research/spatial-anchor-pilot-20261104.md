@@ -197,3 +197,14 @@ predictions, checkpoints or image data were transferred away from the cluster.
 Accounting verified COMPLETED, exit 0:0, elapsed 45 seconds. Recomputed train
 RMSE was 56.3630781 px and validation RMSE 56.8976882 px, consistent with the
 original run within CPU floating-point tolerance.
+
+## Completed pilot
+
+Job 1952925 started at 14:59:20 Paris time and completed in **41m24s**, exit
+0:0, on one A100. The final completion marker, endpoint JSON, all four 5,000-row
+finite CSVs, checkpoints and initialization/order hashes were verified. All four
+tiny-fit gates failed. See the [final result report](spatial-anchor-results-20261104.md)
+for endpoint metrics, selected-node versus all-slot spread, matching diagnostics,
+limitations, aggregate figures and remote image paths. The remote experiment
+parent also contains `aggregate-summary.json`; the local copy contains only
+aggregate metrics/provenance, with raw graphs and checkpoints kept on Jean Zay.

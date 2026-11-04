@@ -1,0 +1,1462 @@
+{
+  "job_id": "1952925",
+  "accounting": "1952925|COMPLETED|0:0|00:41:24|billing=1,cpu=8,gres/gpu=1,mem=30000M,node=1",
+  "source_commit": "41d18afe61dd01d365b1ea8d41dac539e83f4442",
+  "source_archive_sha256": "0b9023a345bdeb18fc8ceb9e63affa253baaba5b9e1ac42ccda0e52cc38ff696",
+  "subset_sha256": "c199e3a4d18229b067a3b779c6f17df5941624a5a94c3d77a86cbedb6484ddec",
+  "torch": "2.3.0",
+  "device": "cuda",
+  "train_graphs": 10,
+  "valid_graphs": 4,
+  "capacity": 64,
+  "maximum_gt_nodes": 20,
+  "seed": 1234,
+  "steps_per_arm": 5000,
+  "batch_size": 4,
+  "hold_steps": 500,
+  "ramp_steps": 500,
+  "learning_rate_schedule": "50-step warmup, cosine to 5000",
+  "output_root": "/lustre/fswork/projects/rech/vnc/upz73jr/experiments/grale-spatial-anchor-20261104/paired-5000-a100-recovered",
+  "target_provenance": {
+    "mode": "saved_inspection_gt_arrays",
+    "report_sha256": "e7be32892a0b7e4b673a8acec518ada670675a8e34a187097370d13547cdbeb5",
+    "target_artifact_count": 14,
+    "original_archive_sha256_verified": false
+  },
+  "arms": {
+    "default": {
+      "shared_parameter_sha256": "492a2eb362737c2910e3c2da3796835f2bb8633e12e5f6206c0f3ec34310880a",
+      "initial_parameter_sha256": "3d20ea0d506d1be2cded7032c73ff3d18c69b2b79acb4c88cf457db88b0da136",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "effective_weight_decay": 0.01,
+      "changed_parameter_tensors": 702,
+      "seconds": 597.0705902576447,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55629758,
+      "last_residual_scale": 1,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.016191565527835735,
+            "effective_output_slots_per_target": 63.99082842743485,
+            "barycenter_residual_rmse_px_mass_weighted": 108.172752356172,
+            "all_slot_spread_px": 0.44860601180127335,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.016375875196002462,
+            "effective_output_slots_per_target": 63.98639674747955,
+            "barycenter_residual_rmse_px_mass_weighted": 123.60436522418907,
+            "all_slot_spread_px": 0.4303082068376532,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.017946759637135243,
+            "effective_output_slots_per_target": 63.83700140901887,
+            "barycenter_residual_rmse_px_mass_weighted": 18.25734492722412,
+            "all_slot_spread_px": 0.3534536777672128,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.018022102923173838,
+            "effective_output_slots_per_target": 63.843725053266894,
+            "barycenter_residual_rmse_px_mass_weighted": 34.86214126958444,
+            "all_slot_spread_px": 0.3571083479759813,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.57079627688968,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.9375,
+            "components_correct": 0.125,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.07547815933694743,
+            "effective_output_slots_per_target": 17.858300170998774,
+            "barycenter_residual_rmse_px_mass_weighted": 18.767308015536905,
+            "all_slot_spread_px": 11.425378546285849,
+            "median_spread_ratio": 0.06850619114629114
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 60.34938433088619,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.5,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.06065587459290783,
+            "effective_output_slots_per_target": 22.98319708459707,
+            "barycenter_residual_rmse_px_mass_weighted": 38.37337856841174,
+            "all_slot_spread_px": 9.105738733295807,
+            "median_spread_ratio": 0.11648248429628352
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.96401655011616,
+            "count_correct": 0.875,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08570531944767587,
+            "effective_output_slots_per_target": 14.450637959417964,
+            "barycenter_residual_rmse_px_mass_weighted": 10.037244142651312,
+            "all_slot_spread_px": 5.5916362628373975,
+            "median_spread_ratio": 0.023323962629604487
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 52.652500526907104,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05618814660349186,
+            "effective_output_slots_per_target": 29.421880329322903,
+            "barycenter_residual_rmse_px_mass_weighted": 28.47986606563821,
+            "all_slot_spread_px": 4.89524519204472,
+            "median_spread_ratio": 0.027973350198657963
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.38019850430594,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08427726887040779,
+            "effective_output_slots_per_target": 14.25420805778387,
+            "barycenter_residual_rmse_px_mass_weighted": 1.7660529415710349,
+            "all_slot_spread_px": 5.658691973342281,
+            "median_spread_ratio": 0.018333183013372188
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 50.901208598499096,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05484872951189131,
+            "effective_output_slots_per_target": 30.002700091950306,
+            "barycenter_residual_rmse_px_mass_weighted": 26.487396099339225,
+            "all_slot_spread_px": 6.017526575899023,
+            "median_spread_ratio": 0.01992893916942558
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.42979283675919,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0842208884327719,
+            "effective_output_slots_per_target": 14.24524840287081,
+            "barycenter_residual_rmse_px_mass_weighted": 1.98260627428733,
+            "all_slot_spread_px": 4.274804071142805,
+            "median_spread_ratio": 0.015689307041875006
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.50721530162902,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.054662721969929634,
+            "effective_output_slots_per_target": 26.097006762498797,
+            "barycenter_residual_rmse_px_mass_weighted": 28.650939637634398,
+            "all_slot_spread_px": 3.274863423273507,
+            "median_spread_ratio": 0.02676321765874474
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.64165330647047,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08412253482127166,
+            "effective_output_slots_per_target": 14.238345210648173,
+            "barycenter_residual_rmse_px_mass_weighted": 0.8258007571304768,
+            "all_slot_spread_px": 3.8971962485325475,
+            "median_spread_ratio": 0.01061470026716901
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.387362212857646,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05451126538380402,
+            "effective_output_slots_per_target": 26.09792384715277,
+            "barycenter_residual_rmse_px_mass_weighted": 27.412383572868094,
+            "all_slot_spread_px": 3.0808232949025167,
+            "median_spread_ratio": 0.021733277687649596
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.7230521999454,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08408917969813835,
+            "effective_output_slots_per_target": 14.236754869827621,
+            "barycenter_residual_rmse_px_mass_weighted": 0.6513749026923592,
+            "all_slot_spread_px": 3.7631847374202207,
+            "median_spread_ratio": 0.008299481135114794
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.349875918200084,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.054423250156653245,
+            "effective_output_slots_per_target": 26.09819938662767,
+            "barycenter_residual_rmse_px_mass_weighted": 27.08533489410429,
+            "all_slot_spread_px": 2.952485931744642,
+            "median_spread_ratio": 0.020390061938967783
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 8,
+      "train_predicted_edges": 0,
+      "train_target_edges": 81,
+      "valid_narrow_graphs_lt_10pct_spread": 3,
+      "valid_predicted_edges": 0,
+      "valid_target_edges": 27
+    },
+    "center": {
+      "shared_parameter_sha256": "492a2eb362737c2910e3c2da3796835f2bb8633e12e5f6206c0f3ec34310880a",
+      "initial_parameter_sha256": "189d0ae50ba6ce36a98c52f24aa64e92abc20473d2a740341c69c10281eba87a",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "effective_weight_decay": 0.01,
+      "changed_parameter_tensors": 702,
+      "seconds": 597.0434675216675,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55630774,
+      "last_residual_scale": 1,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.016191565527835735,
+            "effective_output_slots_per_target": 63.99082842743485,
+            "barycenter_residual_rmse_px_mass_weighted": 17.408456033056844,
+            "all_slot_spread_px": 0,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.016375875196002462,
+            "effective_output_slots_per_target": 63.98639674747955,
+            "barycenter_residual_rmse_px_mass_weighted": 37.25739581472391,
+            "all_slot_spread_px": 0,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.01825611202672905,
+            "effective_output_slots_per_target": 63.76702188700702,
+            "barycenter_residual_rmse_px_mass_weighted": 17.87785675371159,
+            "all_slot_spread_px": 0.012080941191731061,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.01804319974784011,
+            "effective_output_slots_per_target": 63.817406192612644,
+            "barycenter_residual_rmse_px_mass_weighted": 36.95887927411676,
+            "all_slot_spread_px": 0.012377440133284413,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.276840149462444,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8928571428571429,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.06951751913031251,
+            "effective_output_slots_per_target": 19.046019034995258,
+            "barycenter_residual_rmse_px_mass_weighted": 14.232644043128333,
+            "all_slot_spread_px": 7.215086110651489,
+            "median_spread_ratio": 0.027441294967691408
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.682243012231616,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.5,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05982966948015702,
+            "effective_output_slots_per_target": 21.913492483709053,
+            "barycenter_residual_rmse_px_mass_weighted": 32.1132434323518,
+            "all_slot_spread_px": 6.581894237523538,
+            "median_spread_ratio": 0.03867155497201497
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.89985550764629,
+            "count_correct": 0.75,
+            "exact": 0,
+            "assignment_coverage": 0.9642857142857143,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08722866842068779,
+            "effective_output_slots_per_target": 15.18094921935338,
+            "barycenter_residual_rmse_px_mass_weighted": 10.072176655531035,
+            "all_slot_spread_px": 4.27558542424085,
+            "median_spread_ratio": 0.010784224457575101
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.82022925937686,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.675,
+            "components_correct": 0.3333333333333333,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.057515901182486805,
+            "effective_output_slots_per_target": 27.95673537093675,
+            "barycenter_residual_rmse_px_mass_weighted": 32.06153351325594,
+            "all_slot_spread_px": 3.5858966245422152,
+            "median_spread_ratio": 0.015611611413266913
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.51893599537624,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.084578624991056,
+            "effective_output_slots_per_target": 14.252399063302887,
+            "barycenter_residual_rmse_px_mass_weighted": 2.2636340239451647,
+            "all_slot_spread_px": 3.7676776416785085,
+            "median_spread_ratio": 0.013410422532220924
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 50.52406217457652,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.7,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05529734558671815,
+            "effective_output_slots_per_target": 28.764572053297226,
+            "barycenter_residual_rmse_px_mass_weighted": 23.827108334133026,
+            "all_slot_spread_px": 3.585992600274436,
+            "median_spread_ratio": 0.017852118273699792
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.715618617518885,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0842444911704679,
+            "effective_output_slots_per_target": 14.239807665307241,
+            "barycenter_residual_rmse_px_mass_weighted": 1.1121316716124525,
+            "all_slot_spread_px": 3.375736608149617,
+            "median_spread_ratio": 0.00859507968456406
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 50.35990846698739,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.7,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05509869629589457,
+            "effective_output_slots_per_target": 28.79866800671031,
+            "barycenter_residual_rmse_px_mass_weighted": 22.328461570402126,
+            "all_slot_spread_px": 3.5381898297645513,
+            "median_spread_ratio": 0.012686131723999594
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.79814566942672,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0843289258256286,
+            "effective_output_slots_per_target": 14.2380433014463,
+            "barycenter_residual_rmse_px_mass_weighted": 0.5039376208232288,
+            "all_slot_spread_px": 3.1578147580450833,
+            "median_spread_ratio": 0.00700425015528677
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 50.42382953083941,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.7,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05505254431059251,
+            "effective_output_slots_per_target": 28.800588906608734,
+            "barycenter_residual_rmse_px_mass_weighted": 22.212093559452388,
+            "all_slot_spread_px": 3.957995291910809,
+            "median_spread_ratio": 0.010004750391873141
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.83917761502791,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0844457663951859,
+            "effective_output_slots_per_target": 14.235906159556643,
+            "barycenter_residual_rmse_px_mass_weighted": 0.39104404067196685,
+            "all_slot_spread_px": 3.1046538204942284,
+            "median_spread_ratio": 0.00573118692731084
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 50.248168546527765,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.675,
+            "components_correct": 0.3333333333333333,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05504123362241808,
+            "effective_output_slots_per_target": 28.88065527863752,
+            "barycenter_residual_rmse_px_mass_weighted": 22.92064242956315,
+            "all_slot_spread_px": 4.110583275840921,
+            "median_spread_ratio": 0.008455392286407766
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 8,
+      "train_predicted_edges": 0,
+      "train_target_edges": 81,
+      "valid_narrow_graphs_lt_10pct_spread": 2,
+      "valid_predicted_edges": 0,
+      "valid_target_edges": 27
+    },
+    "spread": {
+      "shared_parameter_sha256": "492a2eb362737c2910e3c2da3796835f2bb8633e12e5f6206c0f3ec34310880a",
+      "initial_parameter_sha256": "189d0ae50ba6ce36a98c52f24aa64e92abc20473d2a740341c69c10281eba87a",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "effective_weight_decay": 0.01,
+      "changed_parameter_tensors": 702,
+      "seconds": 601.0620903968811,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55630838,
+      "last_residual_scale": 1,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.016191565527835735,
+            "effective_output_slots_per_target": 63.99082842743485,
+            "barycenter_residual_rmse_px_mass_weighted": 56.38004763211079,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.016375875196002462,
+            "effective_output_slots_per_target": 63.98639674747955,
+            "barycenter_residual_rmse_px_mass_weighted": 64.36499851683428,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.019021312425479293,
+            "effective_output_slots_per_target": 63.7572600055223,
+            "barycenter_residual_rmse_px_mass_weighted": 54.1785271548273,
+            "all_slot_spread_px": 52.01288210047355,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.018375811421301586,
+            "effective_output_slots_per_target": 63.84005553883418,
+            "barycenter_residual_rmse_px_mass_weighted": 64.07218649313263,
+            "all_slot_spread_px": 52.012724421469755,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 38.51721659302009,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.9642857142857143,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.07391128807066769,
+            "effective_output_slots_per_target": 18.29440061502762,
+            "barycenter_residual_rmse_px_mass_weighted": 28.885331299093544,
+            "all_slot_spread_px": 51.46411742574773,
+            "median_spread_ratio": 0.4334242211954775
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 33.952949973522955,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.5,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.06463516894054823,
+            "effective_output_slots_per_target": 24.178320953908468,
+            "barycenter_residual_rmse_px_mass_weighted": 45.24480381431465,
+            "all_slot_spread_px": 51.51914257829128,
+            "median_spread_ratio": 0.5696941164333701
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 39.07297136487437,
+            "count_correct": 0.25,
+            "exact": 0,
+            "assignment_coverage": 0.9017857142857143,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08877768184729114,
+            "effective_output_slots_per_target": 17.65208842354143,
+            "barycenter_residual_rmse_px_mass_weighted": 28.398754405092262,
+            "all_slot_spread_px": 51.20423155315909,
+            "median_spread_ratio": 0.42506263137442124
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 35.11245819857567,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.0601808794115276,
+            "effective_output_slots_per_target": 29.066111544627415,
+            "barycenter_residual_rmse_px_mass_weighted": 45.35391818351093,
+            "all_slot_spread_px": 51.35369914381454,
+            "median_spread_ratio": 0.4673586433892616
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 56.38182906081965,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0867752282115602,
+            "effective_output_slots_per_target": 14.255870508005074,
+            "barycenter_residual_rmse_px_mass_weighted": 4.149086555450673,
+            "all_slot_spread_px": 50.05154133479075,
+            "median_spread_ratio": 0.06636827630363915
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 46.74516210142155,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.75,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05586162252301257,
+            "effective_output_slots_per_target": 27.160543919002553,
+            "barycenter_residual_rmse_px_mass_weighted": 31.597346196199158,
+            "all_slot_spread_px": 50.05420709033663,
+            "median_spread_ratio": 0.17564519278311205
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 57.836020945528205,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0877387246186112,
+            "effective_output_slots_per_target": 14.23269331042228,
+            "barycenter_residual_rmse_px_mass_weighted": 3.603115952316711,
+            "all_slot_spread_px": 49.87195286912044,
+            "median_spread_ratio": 0.02711741623607573
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 47.74895157056938,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.775,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05577767064467173,
+            "effective_output_slots_per_target": 26.79778275169659,
+            "barycenter_residual_rmse_px_mass_weighted": 30.268350035174837,
+            "all_slot_spread_px": 49.887906594569664,
+            "median_spread_ratio": 0.20747788147932159
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0.017857142857142856,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 54.53179358618911,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.13141952904070367,
+            "effective_output_slots_per_target": 13.411440802232688,
+            "barycenter_residual_rmse_px_mass_weighted": 5.363715782742274,
+            "all_slot_spread_px": 50.2204381967433,
+            "median_spread_ratio": 0.05544793190730661
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 45.088207802461255,
+            "count_correct": 0.3333333333333333,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.060157491338229924,
+            "effective_output_slots_per_target": 25.43998015723301,
+            "barycenter_residual_rmse_px_mass_weighted": 27.326393911142464,
+            "all_slot_spread_px": 50.02245409467469,
+            "median_spread_ratio": 0.1516582613132627
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 56.031540934287115,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.1450049922991683,
+            "effective_output_slots_per_target": 13.248098203259515,
+            "barycenter_residual_rmse_px_mass_weighted": 2.6581583923434797,
+            "all_slot_spread_px": 50.210237816596646,
+            "median_spread_ratio": 0.02048615616982947
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 45.1161916418784,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05716470303441044,
+            "effective_output_slots_per_target": 25.75102573049784,
+            "barycenter_residual_rmse_px_mass_weighted": 27.924818457405987,
+            "all_slot_spread_px": 50.06761854345762,
+            "median_spread_ratio": 0.1326611597796444
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 6,
+      "train_predicted_edges": 0,
+      "train_target_edges": 81,
+      "valid_narrow_graphs_lt_10pct_spread": 1,
+      "valid_predicted_edges": 0,
+      "valid_target_edges": 27
+    },
+    "spread_warmup": {
+      "shared_parameter_sha256": "492a2eb362737c2910e3c2da3796835f2bb8633e12e5f6206c0f3ec34310880a",
+      "initial_parameter_sha256": "189d0ae50ba6ce36a98c52f24aa64e92abc20473d2a740341c69c10281eba87a",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "effective_weight_decay": 0.01,
+      "changed_parameter_tensors": 702,
+      "seconds": 584.3510057926178,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55630838,
+      "last_residual_scale": 1,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.016191565527835735,
+            "effective_output_slots_per_target": 63.99082842743485,
+            "barycenter_residual_rmse_px_mass_weighted": 56.38004763211079,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.016375875196002462,
+            "effective_output_slots_per_target": 63.98639674747955,
+            "barycenter_residual_rmse_px_mass_weighted": 64.36499851683428,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.018600162568514756,
+            "effective_output_slots_per_target": 63.73822426750109,
+            "barycenter_residual_rmse_px_mass_weighted": 55.07678274723878,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.018235119990041872,
+            "effective_output_slots_per_target": 63.82786378384866,
+            "barycenter_residual_rmse_px_mass_weighted": 63.58489835966507,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 39.48343343013395,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.8928571428571429,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0704056497156893,
+            "effective_output_slots_per_target": 18.53388185271517,
+            "barycenter_residual_rmse_px_mass_weighted": 32.49805477473968,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": 0.44343363839317734
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 41.84345891990957,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.5,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.06371008646610384,
+            "effective_output_slots_per_target": 22.754393276662245,
+            "barycenter_residual_rmse_px_mass_weighted": 50.06939542636004,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": 0.5697127900462582
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 43.166021463182524,
+            "count_correct": 0.5,
+            "exact": 0,
+            "assignment_coverage": 0.9107142857142857,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08788903261709763,
+            "effective_output_slots_per_target": 14.908119161378188,
+            "barycenter_residual_rmse_px_mass_weighted": 31.386895916039496,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": 0.43093935640337755
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 39.0596185705385,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05742754311901058,
+            "effective_output_slots_per_target": 28.519075830064224,
+            "barycenter_residual_rmse_px_mass_weighted": 52.19251853117621,
+            "all_slot_spread_px": 52.01313609443208,
+            "median_spread_ratio": 0.4808871619938631
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.05909543476401,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08534056350144567,
+            "effective_output_slots_per_target": 14.28320494103886,
+            "barycenter_residual_rmse_px_mass_weighted": 13.49721921958836,
+            "all_slot_spread_px": 49.16157822696566,
+            "median_spread_ratio": 0.13795862628120256
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 47.136841701559554,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.055493161601276327,
+            "effective_output_slots_per_target": 29.124433285523708,
+            "barycenter_residual_rmse_px_mass_weighted": 37.21482227489769,
+            "all_slot_spread_px": 49.08873008453889,
+            "median_spread_ratio": 0.1596307666202043
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.365265235886056,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08430425039847435,
+            "effective_output_slots_per_target": 14.239312462941754,
+            "barycenter_residual_rmse_px_mass_weighted": 2.561160640346243,
+            "all_slot_spread_px": 48.51090465213652,
+            "median_spread_ratio": 0.017887564589251847
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 48.88490737867819,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.725,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05481408053340366,
+            "effective_output_slots_per_target": 27.424675893222087,
+            "barycenter_residual_rmse_px_mass_weighted": 28.20841316696693,
+            "all_slot_spread_px": 48.482638606435835,
+            "median_spread_ratio": 0.09561766569696471
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.62418792579772,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08453193012969434,
+            "effective_output_slots_per_target": 14.238546624616315,
+            "barycenter_residual_rmse_px_mass_weighted": 2.101343549505904,
+            "all_slot_spread_px": 48.18912301111328,
+            "median_spread_ratio": 0.010655180749749143
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 48.603262628347174,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.725,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05487580474959614,
+            "effective_output_slots_per_target": 28.151548651631913,
+            "barycenter_residual_rmse_px_mass_weighted": 28.69639873989404,
+            "all_slot_spread_px": 48.16650804765249,
+            "median_spread_ratio": 0.14550956356836023
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.76519668345118,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08452281684301424,
+            "effective_output_slots_per_target": 14.23635870463459,
+            "barycenter_residual_rmse_px_mass_weighted": 1.9120006661454467,
+            "all_slot_spread_px": 47.93509240217255,
+            "median_spread_ratio": 0.008189812699614253
+          },
+          "valid": {
+            "graphs": 3,
+            "node_f1": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 48.569628258182256,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.725,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05493676043971086,
+            "effective_output_slots_per_target": 28.175661975383733,
+            "barycenter_residual_rmse_px_mass_weighted": 28.35643062286945,
+            "all_slot_spread_px": 47.98498641847602,
+            "median_spread_ratio": 0.14722468730238947
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 8,
+      "train_predicted_edges": 0,
+      "train_target_edges": 81,
+      "valid_narrow_graphs_lt_10pct_spread": 1,
+      "valid_predicted_edges": 0,
+      "valid_target_edges": 27
+    }
+  },
+  "reference_replay": {
+    "job_id": "1954449",
+    "all_predictions_reproduced": true,
+    "graphs": 14,
+    "checkpoint_sha256": "55d94393d9c624243346f43b983e14e60583ee485624a686cd8ca42512074971"
+  }
+}

@@ -625,11 +625,35 @@ of the inspector, not new findings about the 200k checkpoint.
 
 ### Spatial-initialization hypothesis, 2026-11-04
 
-The user authorized direct experiment execution through the Eurecom nested
+The user authorized remote experiment execution through the Eurecom nested
 connection. The paired plan is [spatial-anchor-pilot-20261104.md](spatial-anchor-pilot-20261104.md):
 default decoder, a centered zero-head control, jittered spatial anchors, and
 the same anchors held briefly before releasing coordinate residuals. Learned
-L1 matching remains unchanged. The pilot uses one H100 for at most 90 minutes,
+L1 matching remains unchanged. The initial plan requests one H100 for at most 90 minutes,
 four sequential 5k-step fits, the exact existing 10/4 cohort, matched initial
 shared weights and batch order, and isolated source/output directories.
-Submission identifiers and findings are recorded after actual execution.
+After the user requested an A100 fallback, the pending H100 job was replaced.
+An initial A100 attempt failed before training because the old shared prepared
+directory had been removed. The original inspection retained all 14 GT graph
+arrays; an explicit recovery loader preserved the frozen cohort, and CPU replay
+job **1954449** reproduced every original 200k prediction (COMPLETED, exit 0:0,
+45 seconds). The original ZIP hash remains unverified. No source graph/image
+data or checkpoints were copied away from Jean Zay.
+
+Pilot **1952925** completed all four 5k-update fits on one A100, exit 0:0,
+41m24s. All shared-initialization/minibatch-order checks passed and all 20,000
+log rows were finite. Final training RMSE for original/center/spread/warmup was
+58.723/58.839/56.032/58.765 px; every final model had zero node and edge F1.
+Counts and empty graphs were correct on training, but selected-node median
+spread was only 0.830%/0.573%/2.049%/0.819% of GT and all 81 training edges
+were absent. The warmup's early benefit disappeared after release. This pilot
+does not support initialization alone as the next fix; matching remains diffuse.
+It is one seed and a shorter cosine schedule than the original 200k run.
+
+See [the result report](spatial-anchor-results-20261104.md),
+[aggregate metrics](results/spatial-anchor-pilot-20261104-summary.json), and
+[trajectory figure](figures/spatial-anchor-pilot-20261104.png).
+Scientific source is commit `41d18afe61dd01d365b1ea8d41dac539e83f4442` in
+`$WORK/projects/GRALE-spatial-anchor-recovery-20261104`; outputs are
+`$WORK/experiments/grale-spatial-anchor-20261104/paired-5000-a100-recovered`.
+The existing remote checkout, shared data and SCRATCH environments were preserved.
