@@ -101,3 +101,28 @@ gradients include GRALE's existing division by sqrt(feature dimension).
 Sources checked: [SciPy assignment API](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linear_sum_assignment.html)
 and [POT partial FGW API](https://pythonot.github.io/gen_modules/ot.gromov.html#ot.gromov.partial_fused_gromov_wasserstein).
 Actual submission IDs, accounting and results are recorded after execution.
+
+## Submission
+
+Pilot job **1957335** was submitted on 2026-11-04 at about 16:18 Paris time,
+in `gpu_p5`, account `vnc@a100`, QoS `qos_gpu_a100-dev`. Test-only estimates
+favored A100 (16:23) over H100 (16:27); these were not guaranteed start times.
+There is one submitted pilot, three sequential 5k-update arms, no automatic
+chaining, and the 90-minute/one-GPU/four-core budget above.
+
+Frozen source commit: `93433697ef0a656559a1bb8a5f5c06783282a814`.
+Source archive SHA256:
+`fa64df02639e3f6835d113043ae948b27dbb1a5f11549ee11e94a4a7692335f7`.
+The archive checksum was verified before extraction into the isolated source.
+Remote `submission.json` records the batch/package/source hashes and settings.
+Logs: `$WORK/logs/grale/grale-matchers-1957335.{out,err}`.
+
+Additional local parity check: the old/default and new/learned fixture runs had
+bit-identical native predictions and transport arrays in all **28** saved
+graph snapshots (14 graphs at updates 0 and 3), as well as equal initialization
+and data-order hashes. This does not substitute for actual remote outcomes.
+
+The job started at **16:19:15** on `jean-zay-iam07`. POT/package checks and
+CUDA availability passed. Initial learned-control snapshots at 200/1000/2000
+updates reproduce the previous A100 pilot's RMSE exactly. New matcher outcomes
+remain pending until their actual optimizer updates and endpoint checks.

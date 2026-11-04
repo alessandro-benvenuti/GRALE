@@ -657,3 +657,23 @@ Scientific source is commit `41d18afe61dd01d365b1ea8d41dac539e83f4442` in
 `$WORK/projects/GRALE-spatial-anchor-recovery-20261104`; outputs are
 `$WORK/experiments/grale-spatial-anchor-20261104/paired-5000-a100-recovered`.
 The existing remote checkout, shared data and SCRATCH environments were preserved.
+
+### Hungarian/FGW correspondence comparison, 2026-11-04
+
+The user then authorized replacing learned transport with Hungarian and FGW,
+as in Graph-Native-Betti-Matching. The [frozen plan](geometric-matcher-pilot-20261104.md)
+compares three fresh 5k-update arms on the same 10/4 cohort and original decoder
+initialization: learned L1 Sinkhorn, detached coordinate/confidence Hungarian,
+and partial FGW (alpha .4, 32 candidates, global hard projection). Original losses,
+seed and batch order are retained; no fixed index correspondence or test data.
+The original reference matcher is copied unchanged with its SHA recorded.
+
+Job **1957335** started on one A100 at 16:19:15 Paris time, requesting four CPU
+cores and at most 90 minutes, with no chained jobs. Source commit:
+`93433697ef0a656559a1bb8a5f5c06783282a814`, isolated at
+`$WORK/projects/GRALE-geometric-matchers-20261104`; outputs under
+`$WORK/experiments/grale-geometric-matchers-20261104/paired-5000`.
+POT 0.9.7 is copied into a new SCRATCH extension directory without changing either
+existing environment. Analytic contracts, three-arm local runtime/checkpoint
+reload, paired hashes and bit-identical old/new learned controls passed. Remote
+POT/GPU checks passed; scientific outcomes are recorded after execution.
