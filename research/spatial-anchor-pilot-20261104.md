@@ -60,6 +60,14 @@ initialization changes the coordinate loss seen during optimization, not the
 initial matching cost. Sharpness and averaging measurements distinguish a
 temporary geometric constraint from learned correspondence.
 
+This implementation tests fixed spatial anchors plus unconstrained learned
+offsets, with an optional temporary offset hold. The additive anchors persist
+as a slot-specific parameterization even after release; a positive outcome
+would support this parameterization, rather than isolate arbitrary XY-head
+weight initialization alone. Report selected-node spread separately from all
+64 coordinate slots: inactive slots can remain dispersed while selected nodes
+still collapse. Correct counts and global slot spread are not reconstruction.
+
 ## Execution boundaries
 
 One isolated H100 job, four CPU cores, 90-minute wall limit, four sequential
@@ -152,3 +160,40 @@ path retains its hash check. The new frozen source/output will be isolated from
 the failed attempt. A replacement A100 job is limited to 88 minutes, keeping
 the combined maximum allocation below the original 90-minute budget including
 the 69-second startup failure; there is still no automatic chaining.
+
+Replacement job **1952925** was submitted at 14:56:59 Paris time. Scientific
+source commit: `41d18afe61dd01d365b1ea8d41dac539e83f4442`; archive SHA256:
+`0b9023a345bdeb18fc8ceb9e63affa253baaba5b9e1ac42ccda0e52cc38ff696`.
+The new isolated source is `$WORK/projects/GRALE-spatial-anchor-recovery-20261104`;
+new output is
+`$WORK/experiments/grale-spatial-anchor-20261104/paired-5000-a100-recovered`.
+The parent directory's `submission-recovery.json` records the source, batch,
+reference, recovered target directory, resource request and preceding failure.
+Logs: `$WORK/logs/grale/grale-anchor-pilot-1952925.{out,err}`.
+
+An initial source upload exceeded the local SSH terminal's input-line limit and
+did not append any data or deploy code. The connection was reestablished using
+the user's Duo approval. Resending as short lines succeeded; the entire archive
+checksum was verified before extraction/submission. Failed and earlier pending
+attempts remain preserved. No original remote checkout, environment or shared
+source data was modified.
+
+### Independent reference replay
+
+A separate bounded diagnostic, job **1954449**, requested one CPU core, zero
+GPUs and five minutes in `qos_cpu-dev`. It leaves the running GPU pilot unchanged.
+It loads the original 200k checkpoint in the original H100 PyTorch 2.3.1 venv,
+on CPU, from the recovered inputs, verifies the checkpoint/subset identities,
+and compares native decoded coordinates/slots/edges against every saved graph.
+All **14/14 predictions reproduced** (coordinate tolerance `atol=rtol=1e-5`,
+exact slots and edges). This supports recovery of the model inputs even though
+the original ZIP's byte identity remains unavailable. The source script is
+`scripts/verify_recovered_reference.py`, SHA256
+`eec21b81f9d871dbc4abdb2d8a692a249e92d38a751da6cd1188d1611c15642b`.
+The remote aggregate verification is
+`$WORK/experiments/grale-spatial-anchor-20261104/reference-replay.json`; its
+code, batch and submission record are preserved alongside it. No raw targets,
+predictions, checkpoints or image data were transferred away from the cluster.
+Accounting verified COMPLETED, exit 0:0, elapsed 45 seconds. Recomputed train
+RMSE was 56.3630781 px and validation RMSE 56.8976882 px, consistent with the
+original run within CPU floating-point tolerance.
