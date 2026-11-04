@@ -1,0 +1,1314 @@
+{
+  "job_id": "1957335",
+  "accounting": "1957335|COMPLETED|0:0|00:31:00|billing=1,cpu=8,gres/gpu=1,mem=30000M,node=1",
+  "source_commit": "93433697ef0a656559a1bb8a5f5c06783282a814",
+  "source_archive_sha256": "fa64df02639e3f6835d113043ae948b27dbb1a5f11549ee11e94a4a7692335f7",
+  "subset_sha256": "c199e3a4d18229b067a3b779c6f17df5941624a5a94c3d77a86cbedb6484ddec",
+  "torch": "2.3.0",
+  "pot": "0.9.7",
+  "pot_package_provenance_sha256": "0a77a0fd18b21d7bf3ae81f63da046538f5cace12f63e84b111a82a9571b55b3",
+  "device": "cuda",
+  "train_graphs": 10,
+  "valid_graphs": 4,
+  "capacity": 64,
+  "maximum_gt_nodes": 20,
+  "seed": 1234,
+  "steps_per_arm": 5000,
+  "batch_size": 4,
+  "learning_rate_schedule": "50-step warmup, cosine to 5000",
+  "matching_settings": {
+    "assignment_class_cost": 2,
+    "assignment_node_cost": 5,
+    "assignment_fgw_alpha": 0.4,
+    "assignment_candidate_count": 32
+  },
+  "output_root": "/lustre/fswork/projects/rech/vnc/upz73jr/experiments/grale-geometric-matchers-20261104/paired-5000",
+  "target_provenance": {
+    "mode": "saved_inspection_gt_arrays",
+    "report_sha256": "e7be32892a0b7e4b673a8acec518ada670675a8e34a187097370d13547cdbeb5",
+    "target_artifact_count": 14,
+    "original_archive_sha256_verified": false
+  },
+  "arms": {
+    "learned": {
+      "initial_parameter_sha256": "3d20ea0d506d1be2cded7032c73ff3d18c69b2b79acb4c88cf457db88b0da136",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "seconds": 603.9471054077148,
+      "effective_weight_decay": 0.01,
+      "matching_host_seconds": 55.47400436876342,
+      "changed_targets_vs_unary_fraction": 0,
+      "solver_warning_count": 0,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55629950,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.016191565527835735,
+            "effective_output_slots_per_target": 63.99082842743485,
+            "barycenter_residual_rmse_px_mass_weighted": 108.172752356172,
+            "all_slot_spread_px": 0.44860601180127335,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.016375875196002462,
+            "effective_output_slots_per_target": 63.98639674747955,
+            "barycenter_residual_rmse_px_mass_weighted": 123.60436522418907,
+            "all_slot_spread_px": 0.4303082068376532,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.017946759637135243,
+            "effective_output_slots_per_target": 63.83700140901887,
+            "barycenter_residual_rmse_px_mass_weighted": 18.25734492722412,
+            "all_slot_spread_px": 0.3534536777672128,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.018022102923173838,
+            "effective_output_slots_per_target": 63.843725053266894,
+            "barycenter_residual_rmse_px_mass_weighted": 34.86214126958444,
+            "all_slot_spread_px": 0.3571083479759813,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.57079627688968,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.9375,
+            "components_correct": 0.125,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.07547815933694743,
+            "effective_output_slots_per_target": 17.858300170998774,
+            "barycenter_residual_rmse_px_mass_weighted": 18.767308015536905,
+            "all_slot_spread_px": 11.425378546285849,
+            "median_spread_ratio": 0.06850619114629114
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 60.34938433088619,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.5,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.06065587459290783,
+            "effective_output_slots_per_target": 22.98319708459707,
+            "barycenter_residual_rmse_px_mass_weighted": 38.37337856841174,
+            "all_slot_spread_px": 9.105738733295807,
+            "median_spread_ratio": 0.11648248429628352
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.96401655011616,
+            "count_correct": 0.875,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08570531944767587,
+            "effective_output_slots_per_target": 14.450637959417964,
+            "barycenter_residual_rmse_px_mass_weighted": 10.037244142651312,
+            "all_slot_spread_px": 5.5916362628373975,
+            "median_spread_ratio": 0.023323962629604487
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 52.652500526907104,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05618814660349186,
+            "effective_output_slots_per_target": 29.421880329322903,
+            "barycenter_residual_rmse_px_mass_weighted": 28.47986606563821,
+            "all_slot_spread_px": 4.89524519204472,
+            "median_spread_ratio": 0.027973350198657963
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.38019850430594,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08427726887040779,
+            "effective_output_slots_per_target": 14.25420805778387,
+            "barycenter_residual_rmse_px_mass_weighted": 1.7660529415710349,
+            "all_slot_spread_px": 5.658691973342281,
+            "median_spread_ratio": 0.018333183013372188
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 50.901208598499096,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05484872951189131,
+            "effective_output_slots_per_target": 30.002700091950306,
+            "barycenter_residual_rmse_px_mass_weighted": 26.487396099339225,
+            "all_slot_spread_px": 6.017526575899023,
+            "median_spread_ratio": 0.01992893916942558
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.42979283675919,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.0842208884327719,
+            "effective_output_slots_per_target": 14.24524840287081,
+            "barycenter_residual_rmse_px_mass_weighted": 1.98260627428733,
+            "all_slot_spread_px": 4.274804071142805,
+            "median_spread_ratio": 0.015689307041875006
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.50721530162902,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.054662721969929634,
+            "effective_output_slots_per_target": 26.097006762498797,
+            "barycenter_residual_rmse_px_mass_weighted": 28.650939637634398,
+            "all_slot_spread_px": 3.274863423273507,
+            "median_spread_ratio": 0.02676321765874474
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.64165330647047,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08412253482127166,
+            "effective_output_slots_per_target": 14.238345210648173,
+            "barycenter_residual_rmse_px_mass_weighted": 0.8258007571304768,
+            "all_slot_spread_px": 3.8971962485325475,
+            "median_spread_ratio": 0.01061470026716901
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.387362212857646,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.05451126538380402,
+            "effective_output_slots_per_target": 26.09792384715277,
+            "barycenter_residual_rmse_px_mass_weighted": 27.412383572868094,
+            "all_slot_spread_px": 3.0808232949025167,
+            "median_spread_ratio": 0.021733277687649596
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 58.7230521999454,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 0.08408917969813835,
+            "effective_output_slots_per_target": 14.236754869827621,
+            "barycenter_residual_rmse_px_mass_weighted": 0.6513749026923592,
+            "all_slot_spread_px": 3.7631847374202207,
+            "median_spread_ratio": 0.008299481135114794
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.349875918200084,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.8,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 0.054423250156653245,
+            "effective_output_slots_per_target": 26.09819938662767,
+            "barycenter_residual_rmse_px_mass_weighted": 27.08533489410429,
+            "all_slot_spread_px": 2.952485931744642,
+            "median_spread_ratio": 0.020390061938967783
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 8,
+      "train_predicted_edges": 0,
+      "train_target_edges": 81,
+      "train_predicted_nodes": 112,
+      "train_target_nodes": 112,
+      "valid_narrow_graphs_lt_10pct_spread": 3,
+      "valid_predicted_edges": 0,
+      "valid_target_edges": 27,
+      "valid_predicted_nodes": 48,
+      "valid_target_nodes": 40
+    },
+    "hungarian": {
+      "initial_parameter_sha256": "3d20ea0d506d1be2cded7032c73ff3d18c69b2b79acb4c88cf457db88b0da136",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "seconds": 569.6146695613861,
+      "effective_weight_decay": 0.01,
+      "matching_host_seconds": 13.983129489934072,
+      "changed_targets_vs_unary_fraction": 0,
+      "solver_warning_count": 0,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55222606,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 122.5194573491514,
+            "all_slot_spread_px": 0.44860601180127335,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 133.64229949278842,
+            "all_slot_spread_px": 0.4303082068376532,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 60.753955543247685,
+            "all_slot_spread_px": 0.4140962385964919,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 62.84092591544859,
+            "all_slot_spread_px": 0.4095283312543028,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 53.77146817750475,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.7678571428571429,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 48.59332575639686,
+            "all_slot_spread_px": 19.735318637194762,
+            "median_spread_ratio": 0.14622037886986516
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 49.97409440576077,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.575,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 48.60226554891437,
+            "all_slot_spread_px": 19.03777243997034,
+            "median_spread_ratio": 0.1613197464384745
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 41.197262772228086,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.36607142857142855,
+            "components_correct": 0.25,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 35.66596139375801,
+            "all_slot_spread_px": 42.060053161588364,
+            "median_spread_ratio": 0.18939147409261123
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 46.15414594819418,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.375,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 38.4703330872242,
+            "all_slot_spread_px": 41.55943370391922,
+            "median_spread_ratio": 0.2774866458804183
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 48.95844651113118,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.6964285714285714,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 32.092313054852184,
+            "all_slot_spread_px": 52.164182407339894,
+            "median_spread_ratio": 0.3154569879801815
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 46.19429783566815,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.625,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 30.81882868880243,
+            "all_slot_spread_px": 51.020780058047244,
+            "median_spread_ratio": 0.3914942421103085
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0.01020408163265306,
+            "node_recall": 0.008928571428571428,
+            "node_f1": 0.009523809523809525,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 28.6333205197845,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.875,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 27.245843026336466,
+            "all_slot_spread_px": 43.605419206193886,
+            "median_spread_ratio": 0.8994649596168058
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 33.74153346732751,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.7,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 29.696465096388508,
+            "all_slot_spread_px": 43.56832317426758,
+            "median_spread_ratio": 1.055719348689161
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 31.30043055008255,
+            "count_correct": 0.375,
+            "exact": 0,
+            "assignment_coverage": 0.9285714285714286,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 24.54087494665825,
+            "all_slot_spread_px": 71.91428500828778,
+            "median_spread_ratio": 0.8856278640378182
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 31.52507578543172,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.6,
+            "components_correct": 0.3333333333333333,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 23.670848936952922,
+            "all_slot_spread_px": 76.0688819183501,
+            "median_spread_ratio": 0.9900613009601874
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0.017857142857142856,
+            "node_recall": 0.017857142857142856,
+            "node_f1": 0.017857142857142856,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 17.762243908087598,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0.625,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 16.489393944494395,
+            "all_slot_spread_px": 80.36232614185388,
+            "median_spread_ratio": 0.9371950320572716
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0.046511627906976744,
+            "node_recall": 0.05,
+            "node_f1": 0.04819277108433735,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 26.21685135211456,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.7,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 57.943256774933296,
+            "all_slot_spread_px": 81.22174777503578,
+            "median_spread_ratio": 1.1573891381122614
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 0,
+      "train_predicted_edges": 68,
+      "train_target_edges": 81,
+      "train_predicted_nodes": 112,
+      "train_target_nodes": 112,
+      "valid_narrow_graphs_lt_10pct_spread": 0,
+      "valid_predicted_edges": 8,
+      "valid_target_edges": 27,
+      "valid_predicted_nodes": 43,
+      "valid_target_nodes": 40
+    },
+    "fgw": {
+      "initial_parameter_sha256": "3d20ea0d506d1be2cded7032c73ff3d18c69b2b79acb4c88cf457db88b0da136",
+      "minibatch_order_sha256": "659c9e7d8ab71ee4f2ccfa94fa36bf0a867ca219ee825584a6edb9c25c88ffda",
+      "steps": 5000,
+      "seconds": 594.0396859645844,
+      "effective_weight_decay": 0.01,
+      "matching_host_seconds": 39.12273211614229,
+      "changed_targets_vs_unary_fraction": 0.0648174932236257,
+      "solver_warning_count": 0,
+      "finite_log_rows": 5000,
+      "checkpoint_bytes": 55222606,
+      "tiny_fit_gate": false,
+      "snapshots": [
+        {
+          "step": 0,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 122.52208625778643,
+            "all_slot_spread_px": 0.44860601180127335,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 133.66708286970717,
+            "all_slot_spread_px": 0.4303082068376532,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 50,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 60.904583532563315,
+            "all_slot_spread_px": 0.41650917568406587,
+            "median_spread_ratio": null
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": null,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 62.87774683577004,
+            "all_slot_spread_px": 0.41134999335642725,
+            "median_spread_ratio": null
+          }
+        },
+        {
+          "step": 200,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 46.1304092015443,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.8035714285714286,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 38.42205450778346,
+            "all_slot_spread_px": 32.90230557717982,
+            "median_spread_ratio": 0.3787523544278726
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 44.069946729346384,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.575,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 37.225882233557435,
+            "all_slot_spread_px": 31.568350029904035,
+            "median_spread_ratio": 0.39605108385559984
+          }
+        },
+        {
+          "step": 500,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 45.9483742527289,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.875,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 36.866893175139836,
+            "all_slot_spread_px": 79.26835852910017,
+            "median_spread_ratio": 0.30368927180583677
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 43.67016781091262,
+            "count_correct": 0.3333333333333333,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 43.864911025111496,
+            "all_slot_spread_px": 77.81407200795262,
+            "median_spread_ratio": 0.39878194787544724
+          }
+        },
+        {
+          "step": 1000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0.00980392156862745,
+            "node_recall": 0.008928571428571428,
+            "node_f1": 0.009345794392523364,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 27.47129237429132,
+            "count_correct": 0.25,
+            "exact": 0,
+            "assignment_coverage": 0.8839285714285714,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 23.095193965065505,
+            "all_slot_spread_px": 43.73506240129406,
+            "median_spread_ratio": 0.9203441275878678
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 26.628292702071526,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.75,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 28.19178665284312,
+            "all_slot_spread_px": 43.24919963659434,
+            "median_spread_ratio": 1.0412546473144302
+          }
+        },
+        {
+          "step": 2000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 28.277912657692823,
+            "count_correct": 0.125,
+            "exact": 0,
+            "assignment_coverage": 0.9196428571428571,
+            "components_correct": 0.125,
+            "cycles_correct": 1
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 22.52199195755105,
+            "all_slot_spread_px": 47.454118702092664,
+            "median_spread_ratio": 0.8646477732117861
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0.023809523809523808,
+            "node_recall": 0.025,
+            "node_f1": 0.024390243902439025,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 22.832118568026775,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.65,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 27.430838875266442,
+            "all_slot_spread_px": 48.60730115180482,
+            "median_spread_ratio": 0.9972497803176618
+          }
+        },
+        {
+          "step": 3000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0.018518518518518517,
+            "node_recall": 0.017857142857142856,
+            "node_f1": 0.01818181818181818,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 17.18257895365052,
+            "count_correct": 0.5,
+            "exact": 0,
+            "assignment_coverage": 0.9642857142857143,
+            "components_correct": 0.25,
+            "cycles_correct": 0.875
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 15.361913460947466,
+            "all_slot_spread_px": 46.16389882676134,
+            "median_spread_ratio": 0.9215038226954603
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0.023255813953488372,
+            "node_recall": 0.025,
+            "node_f1": 0.024096385542168676,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 27.54884560040146,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.725,
+            "components_correct": 0,
+            "cycles_correct": 1
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 27.659646829849436,
+            "all_slot_spread_px": 53.48429826485708,
+            "median_spread_ratio": 1.0837394588250366
+          }
+        },
+        {
+          "step": 5000,
+          "tiny_fit_gate": false,
+          "train": {
+            "graphs": 8,
+            "node_precision": 0.0625,
+            "node_recall": 0.0625,
+            "node_f1": 0.0625,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 10.871518979235287,
+            "count_correct": 1,
+            "exact": 0,
+            "assignment_coverage": 1,
+            "components_correct": 0.875,
+            "cycles_correct": 0.875
+          },
+          "train_empty_exact": 1,
+          "train_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 9.533416292457908,
+            "all_slot_spread_px": 54.342815926557336,
+            "median_spread_ratio": 0.9687787655469347
+          },
+          "valid": {
+            "graphs": 3,
+            "node_precision": 0,
+            "node_recall": 0,
+            "node_f1": 0,
+            "edge_precision": 0,
+            "edge_recall": 0,
+            "edge_f1": 0,
+            "coordinate_rmse_px": 28.043405578579485,
+            "count_correct": 0,
+            "exact": 0,
+            "assignment_coverage": 0.825,
+            "components_correct": 0.3333333333333333,
+            "cycles_correct": 0.6666666666666666
+          },
+          "valid_empty_exact": 1,
+          "valid_diagnostics": {
+            "mean_max_assignment_weight": 1,
+            "effective_output_slots_per_target": 1,
+            "barycenter_residual_rmse_px_mass_weighted": 30.656239885650205,
+            "all_slot_spread_px": 59.224656742723376,
+            "median_spread_ratio": 1.1785704672444657
+          }
+        }
+      ],
+      "train_narrow_graphs_lt_10pct_spread": 0,
+      "train_predicted_edges": 81,
+      "train_target_edges": 81,
+      "train_predicted_nodes": 112,
+      "train_target_nodes": 112,
+      "valid_narrow_graphs_lt_10pct_spread": 0,
+      "valid_predicted_edges": 22,
+      "valid_target_edges": 27,
+      "valid_predicted_nodes": 49,
+      "valid_target_nodes": 40
+    }
+  },
+  "previous_control_parity": {
+    "initial_parameter_hash_equal": true,
+    "data_order_hash_equal": true,
+    "all_aggregate_snapshots_equal": true
+  }
+}

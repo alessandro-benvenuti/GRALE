@@ -676,4 +676,29 @@ cores and at most 90 minutes, with no chained jobs. Source commit:
 POT 0.9.7 is copied into a new SCRATCH extension directory without changing either
 existing environment. Analytic contracts, three-arm local runtime/checkpoint
 reload, paired hashes and bit-identical old/new learned controls passed. Remote
-POT/GPU checks passed; scientific outcomes are recorded after execution.
+POT/GPU checks passed; completed outcomes follow.
+
+The comparison subsequently completed: GPU job **1957335**, COMPLETED 0:0 in
+31m00s; CPU job **1959587**, export-only readback COMPLETED 0:0 in 1m03s. All
+paired/source checks passed, all 15k CSV rows were finite, and the learned
+control's full aggregate snapshot sequence exactly matches the earlier A100
+control. Train coordinate RMSE for learned/Hungarian/FGW is 58.723/17.762/10.872 px
+with correct counts/full coverage; node F1 at 2 px is 0/.017857/.0625 and strict
+spatial edge F1 remains zero. Selected-node spread is 0.83%/93.72%/96.88% of GT;
+emitted edges are 0/68/81.
+
+Post-hoc adjacency F1 under unrestricted position-derived correspondence is
+0/.765101/.987654 (FGW: 80 TP/1 FP/1 FN); this is a connectivity diagnostic without
+the strict localization gate. Same-count input swaps on four training graphs,
+including centered-shape comparisons, support input-dependent geometry beyond
+centroid/count information. FGW changes 6.482% of training matches versus unary
+Hungarian, with no solver warnings. It improves training optimization/structure
+in this seed but adds a false-cycle graph and has no demonstrated strict
+validation advantage. All tiny-fit gates fail. A longer paired Hungarian/FGW
+tiny-fit study with a documented common schedule is the proposed next step.
+
+[Result report](geometric-matcher-results-20261104.md),
+[primary figure](figures/geometric-matcher-pilot-20261104.png), and
+[diagnostic figure](figures/geometric-matcher-pilot-20261104-diagnostics.png)
+contain interpretation, limitations, source hashes and remote image/checkpoint
+paths. Only aggregate metrics/metadata were copied locally.

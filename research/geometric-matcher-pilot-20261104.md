@@ -151,3 +151,26 @@ The generated-fixture export readback completed. Additional analytic examples
 check strict versus unrestricted connectivity, known same-count pairings,
 translation-invariant centering and sensitivity to differing shapes. All
 individual arrays remain on Jean Zay; only aggregate readback is returned.
+
+## Completed comparison
+
+GPU job **1957335** completed exit 0:0 in **31m00s**, and export-readback job
+**1959587** completed exit 0:0 in **1m03s**. The GPU source hashes remained
+unchanged, all 15,000 sequential log rows were finite, paired hashes matched,
+and the learned control's entire aggregate sequence exactly reproduced the
+earlier pilot. FGW reported no solver warnings or fallbacks.
+
+Final train RMSE learned/Hungarian/FGW: 58.723/17.762/10.872 px, at full coverage
+and correct counts. Native node F1: 0/.017857/.0625; strict spatial edge F1 remains
+zero. Hungarian/FGW have near-GT selected-node spread and emit 68/81 edges.
+The independent, unrestricted position-matching connectivity diagnostic gives
+F1 0/.765101/.987654, with 80 TP/1 FP/1 FN for FGW. Same-count centered-input
+swaps support input-dependent shape learning. Validation remains weak and does
+not establish FGW superiority. All strict tiny-fit gates failed.
+
+See [the complete results and limitations](geometric-matcher-results-20261104.md),
+[primary metrics](results/geometric-matcher-pilot-20261104-summary.json) and
+[post-hoc diagnostic metrics](results/geometric-matcher-pilot-20261104-analysis.json).
+The readback script SHA256 is
+`c4267497fcf8fc591d04eadb728c88c2b5d2ef969956e37a6dcd766441dfb254`.
+All individual predictions, example images and checkpoints remain on Jean Zay.
