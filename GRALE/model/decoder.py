@@ -4,6 +4,7 @@ from GRALE.data import BatchedDenseData
 from GRALE.attention import EvoformerDecoder, TransformerDecoder, EvoformerEncoder
 from .utils import MLP_head, build_E_from_X, MLP
 import torch
+import math
 
 class AbstractGraphDecoder(nn.Module):
     '''
@@ -70,6 +71,8 @@ class EvoformerGraphDecoder(AbstractGraphDecoder):
                  triangular_multiplication_mode='symmetric',
                  triangular_attention_mode='none',
                  geometric=False,
+                 coordinate_init='default',
+                 coordinate_anchor_seed=1234,
                  ):
         
         super().__init__()
@@ -97,6 +100,31 @@ class EvoformerGraphDecoder(AbstractGraphDecoder):
         self.head_A = MLP_head(in_dim = edge_model_dim, hidden_dim = None, out_dim = 1, dropout = 0.)
         self.head_edge_labels = MLP_head(in_dim = edge_model_dim, hidden_dim = None, out_dim = edge_labels_dim, dropout = 0.)
         self.head_edge_features = MLP_head(in_dim = edge_model_dim, hidden_dim = edge_hidden_dim, out_dim = edge_features_dim, dropout = 0.)
+        # Optional spatial initialization for a controlled experiment. The default
+        # adds no state-dict entries and retains the original decoder behavior.
+        if coordinate_init not in ('default', 'center', 'jittered_grid'):
+            raise ValueError(f'Unknown coordinate_init: {coordinate_init}')
+        self.register_buffer('coordinate_anchors', None)
+        self.register_buffer('coordinate_residual_scale', None)
+        if coordinate_init != 'default':
+            if not geometric or node_features_dim != 2:
+                raise ValueError('Spatial coordinate initialization requires geometric XY outputs')
+            anchors = torch.full((n_nodes_max, 2), .5)
+            if coordinate_init == 'jittered_grid':
+                side = math.isqrt(n_nodes_max)
+                if side * side != n_nodes_max:
+                    raise ValueError('Jittered-grid initialization requires a square slot capacity')
+                rng = torch.Generator().manual_seed(coordinate_anchor_seed)
+                y, x = torch.meshgrid(torch.arange(side), torch.arange(side), indexing='ij')
+                anchors = (torch.stack([x, y], dim=-1).reshape(-1, 2)
+                           + .1 + .8 * torch.rand(n_nodes_max, 2, generator=rng)) / side
+                anchors = anchors[torch.randperm(n_nodes_max, generator=rng)]
+            self.coordinate_anchors = anchors.unsqueeze(0)
+            self.coordinate_residual_scale = torch.tensor(1.)
+            final = self.head_node_features.mlp
+            final = final if isinstance(final, nn.Linear) else final[-1]
+            nn.init.zeros_(final.weight)
+            nn.init.zeros_(final.bias)
     
     
     def forward(self, graph_embedding: Tensor):
@@ -106,6 +134,8 @@ class EvoformerGraphDecoder(AbstractGraphDecoder):
         h = self.head_h(X).squeeze(-1)
         node_embeddings = self.head_node_embeddings(X)
         node_features = self.head_node_features(X)
+        if self.coordinate_anchors is not None:
+            node_features = self.coordinate_anchors + self.coordinate_residual_scale * node_features
         A = self.head_A(E).squeeze(-1)
         edge_labels = self.head_edge_labels(E)
         edge_features = self.head_edge_features(E)

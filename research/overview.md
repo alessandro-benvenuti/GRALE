@@ -622,3 +622,14 @@ plans verified the assignment diagnostics and exact variance decomposition.
 A synthetic CSV verified first/last windows, late-plateau measurements and loss
 coefficients. Generated graph/loss plots were visually checked. These are tests
 of the inspector, not new findings about the 200k checkpoint.
+
+### Spatial-initialization hypothesis, 2026-11-04
+
+The user authorized direct experiment execution through the Eurecom nested
+connection. The paired plan is [spatial-anchor-pilot-20261104.md](spatial-anchor-pilot-20261104.md):
+default decoder, a centered zero-head control, jittered spatial anchors, and
+the same anchors held briefly before releasing coordinate residuals. Learned
+L1 matching remains unchanged. The pilot uses one H100 for at most 90 minutes,
+four sequential 5k-step fits, the exact existing 10/4 cohort, matched initial
+shared weights and batch order, and isolated source/output directories.
+Submission identifiers and findings are recorded after actual execution.
