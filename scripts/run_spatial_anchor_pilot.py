@@ -33,6 +33,75 @@ ARMS = {'default': 'default', 'center': 'center',
         'spread': 'jittered_grid', 'spread_warmup': 'jittered_grid'}
 
 
+class InspectionDataset(GeometricDataset):
+    """Recover training inputs from the old diagnostic's saved GT arrays.
+
+    These are the exact float32 nodes and simple adjacency used by that run.
+    Original images/curved paths are unavailable and are not used by this pilot.
+    The frozen subset itself is neither edited nor resampled.
+    """
+    def __init__(self, manifest, split, n_nodes_max, inspection):
+        super().__init__(manifest, split, n_nodes_max)
+        self.inspection = inspection
+        self.diagnostic_split = split
+
+    def target_path(self, index):
+        return self.inspection / f'{self.diagnostic_split}-{self.samples[index]["sample_id"]}.npz'
+
+    def load_target(self, index):
+        with np.load(self.target_path(index), allow_pickle=False) as target:
+            return {'nodes': target['target_nodes'], 'edges': target['target_edges'],
+                    'metric': target['metric']}
+
+
+def inspection_datasets(manifest, frozen, config, inspection, reference_run=None):
+    """Validate identity/counts/topology and retain source hashes for recovery."""
+    report_path = inspection / 'report.json'
+    report = json.loads(report_path.read_text())
+    if report['subset_sha256'] != digest(manifest):
+        raise ValueError('Inspection belongs to a different frozen subset')
+    if reference_run and Path(report['run_dir']).resolve() != reference_run.resolve():
+        raise ValueError('Inspection belongs to a different reference run')
+    if report.get('saved_prediction_mismatches') != []:
+        raise ValueError('Inspection did not reproduce saved reference predictions')
+    records = {(r['split'], r['sample_id']): r for r in report['graphs']}
+    datasets = {split: InspectionDataset(manifest, split, config['n_nodes_max'], inspection)
+                for split in ['train', 'valid']}
+    expected = {(split, row['sample_id']) for split, dataset in datasets.items() for row in dataset.samples}
+    if set(records) != expected or len(report['graphs']) != len(expected):
+        raise ValueError('Inspection and frozen cohort sample identities differ')
+    sources = {}
+    for split, dataset in datasets.items():
+        for index, sample in enumerate(dataset.samples):
+            target = dataset.load_target(index)
+            nodes, edges, metric = (target[key] for key in ['nodes', 'edges', 'metric'])
+            record = records[split, sample['sample_id']]
+            if (nodes.dtype != np.float32 or nodes.shape != (sample['nodes'], 2)
+                    or edges.shape != (sample['edges'], 2)
+                    or not np.issubdtype(edges.dtype, np.integer)
+                    or not np.isfinite(nodes).all()
+                    or not np.array_equal(metric, np.eye(2) * 128)
+                    or record['n_true'] != len(nodes) or record['target_edges'] != len(edges)):
+                raise ValueError(f'Invalid recovered target: {sample["sample_id"]}')
+            if edges.size and (edges.min() < 0 or edges.max() >= len(nodes)
+                               or np.any(edges[:, 0] >= edges[:, 1])
+                               or len(np.unique(edges, axis=0)) != len(edges)):
+                raise ValueError('Recovered edges must be unique, simple and undirected')
+            measured = spread(nodes @ metric.T)
+            saved = record['target_spread_px']
+            if (measured is None) != (saved is None) or (measured is not None and
+                    not np.isclose(measured, saved, atol=1e-6, rtol=1e-7)):
+                raise ValueError('Recovered geometry does not match the saved inspection')
+            # Exercise the inherited graph builder before creating any run output.
+            dataset[index]
+            sources[str(dataset.target_path(index))] = digest(dataset.target_path(index))
+    return datasets, {'mode': 'saved_inspection_gt_arrays', 'report': str(report_path),
+                      'report_sha256': digest(report_path), 'target_artifacts_sha256': sources,
+                      'original_archives_sha256_unverified': frozen['archives_sha256'],
+                      'unavailable_unused_fields': ['images', 'full_paths', 'path_offsets'],
+                      'note': 'Recovered original float32 training nodes, simple edges and metric; no resampling'}
+
+
 def initialize(config, arm, device):
     random.seed(config['seed'])
     np.random.seed(config['seed'])
@@ -154,6 +223,8 @@ def main():
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--reference-run', type=Path, help='Completed run containing result.json and config.yaml')
     source.add_argument('--manifest', type=Path, help='Frozen manifest for a local runtime check')
+    parser.add_argument('--inspection-targets', type=Path,
+                        help='Explicit recovery from this reference inspection when its source archive is unavailable')
     parser.add_argument('--config', type=Path, default=ROOT / 'GRALE/configs/octa_straight_l1_200k.yaml')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--device', choices=['cpu', 'cuda'], default='cuda')
@@ -175,14 +246,19 @@ def main():
         manifest = args.manifest
         config = yaml.safe_load(args.config.read_text())
     frozen = json.loads(manifest.read_text())
-    for archive, expected in frozen['archives_sha256'].items():
-        if digest(Path(frozen['data_root']) / archive) != expected:
-            raise ValueError(f'Target archive identity changed: {archive}')
     config.update(n_grad_steps=args.steps, n_warmup_steps=min(50, args.steps // 10),
                   matcher_model='sinkhorn', matcher_cost='l1', batchsize_effective=4)
     if config['node_pos_dim'] != 0 or config['node_features_dim'] != 2:
         raise ValueError('This paired pilot requires the coordinate-only XY configuration')
-    datasets = {split: GeometricDataset(manifest, split, config['n_nodes_max']) for split in ['train', 'valid']}
+    if args.inspection_targets:
+        datasets, target_provenance = inspection_datasets(
+            manifest, frozen, config, args.inspection_targets, args.reference_run)
+    else:
+        for archive, expected in frozen['archives_sha256'].items():
+            if digest(Path(frozen['data_root']) / archive) != expected:
+                raise ValueError(f'Target archive identity changed: {archive}')
+        datasets = {split: GeometricDataset(manifest, split, config['n_nodes_max']) for split in ['train', 'valid']}
+        target_provenance = {'mode': 'original_verified_archives', 'archives_sha256': frozen['archives_sha256']}
     if len(datasets['train']) != 10 or len(datasets['valid']) != 4:
         raise ValueError('Use the existing frozen 10-train/4-validation cohort')
     if {r['subject_id'] for r in datasets['train'].samples} & {r['subject_id'] for r in datasets['valid'].samples}:
@@ -194,6 +270,7 @@ def main():
     state = {'purpose': 'Paired initialization experiment; one seed, tiny cohort; not a generalization study',
              'reference_run': str(args.reference_run) if args.reference_run else None,
              'subset': str(manifest), 'subset_sha256': digest(manifest), 'config': config,
+             'target_provenance': target_provenance,
              'hold_steps': args.hold_steps, 'ramp_steps': args.ramp_steps,
              'torch': torch.__version__, 'device': args.device,
              'source_commit': (ROOT / 'SOURCE_COMMIT').read_text().strip() if (ROOT / 'SOURCE_COMMIT').exists() else None,

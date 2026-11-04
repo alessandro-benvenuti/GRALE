@@ -121,3 +121,34 @@ source or original cohort.
 
 At submission the A100 job was pending. Completion and experimental outcomes
 must be established from its actual logs, endpoint result and accounting.
+
+### Missing-source infrastructure failure and exact training-target recovery
+
+Job 1952135 passed the environment/GPU check (A100 80GB, existing SCRATCH venv)
+but failed before creating the training output or performing optimizer updates:
+the frozen manifest's shared `data_root` no longer exists. Accounting: FAILED,
+exit 1:0, elapsed 69 seconds. The original archive hash could not be verified.
+The user's suggested `.../datasets/octa-synth-packed` contains source CSV graphs
+and a different patch layout, but not the prepared archive at the examined paths.
+No raw-data regeneration or replacement cohort was used.
+
+The original inspection folder `inspection-20261030-104603` retains all 14
+targets: original float32 training nodes, decoded simple undirected edges and
+pixel metric. Its report verifies the original frozen-subset SHA256 and lists
+no mismatches against saved reference predictions. An explicit optional
+`--inspection-targets` loader reuses these arrays without changing the frozen
+manifest. It checks all sample/split identities, node/edge counts, edge validity,
+metric, finite coordinates and spatial spread against that report, and records
+SHA256 for the report and every target artifact. Original images and curved
+paths remain unavailable and are not inputs or scoring targets for this pilot.
+The original archive hash is explicitly recorded as **unverified**, rather than
+claiming archive-level identity from the recovered training arrays.
+
+Local validation compared every model-input tensor for all 14 generated fixture
+graphs (activations, coordinates, adjacency, edge labels and shortest paths):
+recovery versus the original ZIP loader were exactly equal. A three-step fit of
+all four arms through the recovery mode completed. The default archive-loading
+path retains its hash check. The new frozen source/output will be isolated from
+the failed attempt. A replacement A100 job is limited to 88 minutes, keeping
+the combined maximum allocation below the original 90-minute budget including
+the 69-second startup failure; there is still no automatic chaining.

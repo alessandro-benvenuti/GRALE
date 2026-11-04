@@ -9,7 +9,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --hint=nomultithread
-#SBATCH --time=01:30:00
+#SBATCH --time=01:28:00
 
 # A100 fallback for the same frozen scientific source and four sequential arms.
 set -eo pipefail
@@ -21,6 +21,10 @@ source "$GRALE_REPO_DIR/cluster/jean_zay/env.sh" a100
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 python cluster/jean_zay/check_environment.py --gpu \
   --output "$GRALE_LOG_DIR/grale-anchor-environment-$SLURM_JOB_ID.json"
+recovery_args=()
+if [[ -n "${GRALE_ANCHOR_INSPECTION:-}" ]]; then
+  recovery_args=(--inspection-targets "$GRALE_ANCHOR_INSPECTION")
+fi
 srun "$GRALE_VENV/bin/python" -u scripts/run_spatial_anchor_pilot.py \
   --reference-run "$GRALE_ANCHOR_REFERENCE" --output "$GRALE_ANCHOR_OUTPUT" \
-  --device cuda --steps 5000 --hold-steps 500 --ramp-steps 500
+  --device cuda --steps 5000 --hold-steps 500 --ramp-steps 500 "${recovery_args[@]}"
